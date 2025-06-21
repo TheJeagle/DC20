@@ -56,7 +56,7 @@ const EditableField = ({
             if (isNaN(numValue)) {
                 // What to do if user types "abc" for a number?
                 // Option A: Revert to original 'value' prop
-                finalValueToSave = value;
+                finalValue = value;
                 // Option B: Save a default like 0
                 // finalValueToSave = 0;
                 // Option C: Don't save, keep editing (more complex UI)
