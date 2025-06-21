@@ -1,0 +1,27 @@
+/* src/components/HoverRemoveButton.css */
+.hover-remove-button {
+    background: none;
+    border: none;
+    color: #dc3545;
+    /* Red color */
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 0.9em;
+    /* Adjust size as needed */
+    opacity: 0;
+    /* Hidden by default */
+    transition: opacity 0.2s ease-in-out, color 0.2s ease-in-out;
+    margin-left: 8px;
+    /* Space from the item text */
+    vertical-align: middle;
+    /* Align with text if inline */
+}
+
+/* Parent container needs to trigger visibility on its hover */
+/* Example: .feature-item:hover .hover-remove-button */
+/* We will add this to StatBlockPanel.css */
+
+.hover-remove-button:hover {
+    color: #a71d2a;
+    /* Darker red on hover */
+}

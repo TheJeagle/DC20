@@ -1,0 +1,39 @@
+/* src/components/RightBar.css */
+.right-bar {
+    display: flex;
+    flex-direction: column;
+    /* Stack buttons vertically */
+    align-items: center;
+    /* Center buttons if they don't fill width */
+    gap: 15px;
+    /* Space between buttons */
+    padding: 20px 10px;
+    /* Padding inside the bar */
+    background-color: #e0e0e0;
+    /* Light grey, adjust as needed */
+    /* You might want a fixed width, or let it be determined by content/flexbox */
+    /* For a thin strip: */
+    flex: 0 0 80px;
+    /* Don't grow, don't shrink, base width 80px */
+    border-left: 1px solid #ccc;
+}
+
+.right-bar button {
+    padding: 10px;
+    width: 100%;
+    /* Make buttons fill the width of the bar */
+    max-width: 60px;
+    /* Or a fixed px value for icon-like buttons */
+    background-color: #555;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    /* Adjust if using text */
+    /* For icon buttons, you'd set height, width, and use background images or font icons */
+}
+
+.right-bar button:hover {
+    background-color: #777;
+}

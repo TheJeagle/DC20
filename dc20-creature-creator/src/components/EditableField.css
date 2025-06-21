@@ -1,0 +1,49 @@
+/* src/components/EditableField.css */
+.editable-span {
+    cursor: text;
+    padding: 2px 4px;
+    /* Minimal padding to show highlight area */
+    border-radius: 3px;
+    transition: background-color 0.2s ease-in-out;
+    display: inline-block;
+    /* Or block if it needs to fill width */
+}
+
+.editable-span:not(.disabled):hover {
+    background-color: #e0e0e0;
+    /* Light grey highlight on hover */
+}
+
+.editable-span.disabled {
+    cursor: default;
+}
+
+.editable-input {
+    padding: 1px 3px;
+    /* Match span padding */
+    border: 1px solid #007bff;
+    /* Highlight with a blue border */
+    border-radius: 3px;
+    font-family: inherit;
+    /* Inherit font from parent */
+    font-size: inherit;
+    color: inherit;
+    background-color: #f8f9fa;
+    /* Slightly different background when editing */
+    outline: none;
+    /* width: auto; /* Adjust as needed or set specific width on usage */
+    /* max-width: 100px; Example max-width */
+}
+
+/* Style number inputs to hide spinners if desired */
+
+.editable-input[type="number"]::-webkit-outer-spin-button,
+.editable-input[type="number"]::-webkit-inner-spin-button {
+    /* -webkit-appearance: none; */
+    margin: 1px;
+}
+
+.editable-input[type="number"] {
+    /* -moz-appearance: textfield; */
+
+}

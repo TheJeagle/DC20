@@ -1,0 +1,590 @@
+/* src/components/StatBlockPanel.css */
+
+:root {
+    --ff-heading: 'Cinzel', serif;
+    --ff-body: 'Inter', sans-serif;
+    --text-color-dark: #000000;
+    --text-color-light: #FFFFFF;
+    --text-color-muted: #4A4A4A;
+    --bg-dark-block: #000000;
+    --bg-light-panel: #FFFFFF;
+    --border-light: #DDDDDD;
+    --border-dark: #333333;
+    --highlight-hover: #f0f0f0;
+    --editable-border: #007bff;
+}
+
+.stat-block-panel {
+    font-family: var(--ff-body);
+    border: 1px solid var(--border-dark);
+    border-radius: 0;
+    padding: 18px;
+    background-color: var(--bg-light-panel);
+    color: var(--text-color-dark);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    line-height: 1.45;
+    height: calc(100vh - 40px);
+    overflow-y: auto;
+}
+
+/* --- TOP HEADER --- */
+.top-header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+}
+
+.creature-title-main .editable-span,
+.creature-title-main .editable-input {
+    /* Target EditableField's children */
+    font-family: var(--ff-heading);
+    font-size: 1em;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+    color: var(--text-color-dark);
+    /* EditableField specific styling */
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+.creature-title-main .editable-span:not(.disabled):hover {
+    background-color: var(--highlight-hover);
+}
+
+.creature-title-main .editable-input {
+    border: 1px solid var(--editable-border);
+    width: auto;
+    min-width: 200px;
+}
+
+.creature-subtitle {
+    font-family: var(--ff-body);
+    font-size: 0.85em;
+    color: var(--text-color-muted);
+    text-align: right;
+    font-style: normal;
+    white-space: nowrap;
+    padding-bottom: 0.2em;
+}
+
+.creature-subtitle .editable-span,
+.creature-subtitle .editable-input {
+    font-style: normal;
+    color: var(--text-color-muted);
+    padding: 1px 2px;
+    margin: 0 2px;
+    border: none;
+    background: transparent;
+}
+
+.creature-subtitle .editable-span:hover:not(.disabled) {
+    background-color: var(--highlight-hover);
+}
+
+.creature-subtitle .editable-input {
+    border: 1px solid var(--editable-border);
+    width: auto;
+    max-width: 80px;
+}
+
+
+/* --- MAIN STATS GRID (HP/PD/AD & Attributes) --- */
+.stats-main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.stats-block {
+    /* Common for the two black boxes */
+    background-color: var(--bg-dark-block);
+    color: var(--text-color-light);
+    padding: 8px 10px;
+}
+
+/* Defense Stats (HP, PD, AD) - Simple Grid Layout */
+.defense-stats-block {
+    /* Replaces .defense-stats-simple-grid styles */
+    display: grid;
+    grid-template-columns: auto 1fr;
+    /* HP content, PD/AD stack */
+    gap: 0 10px;
+    /* Gap between HP column and PD/AD column */
+    align-items: center;
+    /* Vertically align content of both columns */
+    padding: 8px 10px;
+    /* Keep padding from .stats-block */
+}
+
+.hp-container {
+    display: flex;
+    align-items: center;
+    /* Icon and text align */
+    /* HP itself should be large */
+}
+
+.hp-container .stat-icon {
+    font-size: 1.8em;
+    margin-right: 5px;
+}
+
+/* Larger HP icon */
+.hp-text {
+    font-size: 2em;
+    /* Container for HP label and value */
+    /* display: flex; */
+    /* flex-direction: column; */
+    /* Stack label over value if desired, or keep row */
+    /* align-items: flex-start; */
+}
+
+.hp-text .stat-label {
+    font-size: 1em;
+    font-weight: 700;
+}
+
+.hp-text .editable-field-container .editable-span,
+/* Target EditableField */
+.hp-text .editable-field-container .editable-input {
+    font-size: 1.8em;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.sub-stat-pdr {
+    /* Position PDR under HP text */
+    font-size: 0.75em;
+    opacity: 0.9;
+    margin-left: calc(1.8em + 5px + 3px);
+    /* Align under HP text, after icon and some space */
+    margin-top: -2px;
+}
+
+.sub-stat-pdr .stat-label {
+    margin-right: 2px;
+}
+
+
+.pd-ad-stack {
+    display: flex;
+    flex-direction: column;
+    /* Stack PD over AD */
+    justify-content: center;
+    /* Vertically center PD and AD stack if HP is taller */
+    gap: 6px;
+    /* Space between PD and AD rows */
+}
+
+.pd-ad-stack .stat-item {
+    /* Each of PD, AD */
+    display: flex;
+    align-items: center;
+}
+
+/* General .stat-icon, .stat-label, .stat-value styles apply */
+
+
+/* Attribute Stats (MIG, AGI, INT, CHA) - 2x2 Grid */
+.attribute-stats-simple-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* Two columns for stat pairs */
+    grid-template-rows: auto auto;
+    /* Two rows for stat pairs */
+    gap: 6px 8px;
+    align-items: stretch;
+    /* Stretch items to fill cell height */
+}
+
+.attribute-stats-simple-grid .stat-item {
+    /* Each attribute (MIG, AGI, etc.) */
+    display: grid;
+    /* Subgrid for icon, label, value */
+    grid-template-columns: auto auto 1fr;
+    /* Icon, Label, Value */
+    align-items: center;
+    gap: 0 4px;
+    /* Only column gap */
+}
+
+/* Common styling for elements within .stats-block */
+.stats-block .stat-icon {
+    font-size: 1.15em;
+    line-height: 1;
+    width: 1.3em;
+    height: 1.3em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 3px;
+    flex-shrink: 0;
+}
+
+.stats-block .stat-label {
+    font-family: var(--ff-body);
+    font-weight: 600;
+    white-space: nowrap;
+    line-height: 1;
+    margin-right: 4px;
+}
+
+/* EditableField values styling inside black blocks */
+.stats-block .editable-field-container {
+    /* Wrapper for value + calculated part */
+    display: flex;
+    justify-content: flex-end;
+    /* Pushes value to right */
+    align-items: center;
+    text-align: right;
+}
+
+.stats-block .editable-field-container .editable-span,
+.stats-block .editable-field-container .editable-input {
+    font-family: var(--ff-body);
+    font-weight: 400;
+    font-size: 1em;
+    white-space: nowrap;
+    line-height: 1;
+    padding: 1px 2px;
+    border: none;
+    background: transparent;
+    color: var(--text-color-light);
+    /* Ensure text is light */
+    text-align: right;
+    /* Ensure input text is also right aligned */
+}
+
+.stats-block .editable-field-container .editable-span:hover:not(.disabled) {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.stats-block .editable-field-container .editable-input {
+    border: 1px solid #555;
+    background-color: rgba(50, 50, 50, 0.8);
+    width: 3.5em;
+}
+
+/* Fixed width for numbers */
+
+.calculated-defense,
+.calculated-save {
+    font-size: 0.85em;
+    opacity: 0.8;
+    margin-left: 3px;
+    white-space: nowrap;
+    color: #BBB;
+    /* Lighter than main text */
+}
+
+/* MP Block styling */
+.mp-block {
+    /* To be placed after stats-main-grid if it's separate */
+    background-color: var(--bg-dark-block);
+    color: var(--text-color-light);
+    padding: 8px 10px;
+    margin-top: 10px;
+    /* Space from stats grid */
+    display: grid;
+    /* Can be simple flex too */
+    grid-template-columns: auto auto 1fr;
+    align-items: center;
+    gap: 0 4px;
+}
+
+.mp-block .stat-item {
+    display: contents;
+}
+
+
+/* --- DESCRIPTIVE STATS (Skills, Resistances, etc.) --- */
+.descriptive-stats {
+    font-size: 0.85em;
+    line-height: 1.45;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.descriptive-stats div {
+    margin-bottom: 3px;
+}
+
+/* Make "Skills:", "Resistant:" etc. bold */
+.descriptive-stats strong {
+    font-family: var(--ff-body);
+    font-weight: 700;
+    /* Bold */
+    color: var(--text-color-dark);
+}
+
+/* Editable fields in descriptive stats */
+.descriptive-stats .editable-span,
+.descriptive-stats .editable-input {
+    font-size: 1em;
+    /* Relative to .descriptive-stats font-size */
+    padding: 1px 3px;
+    margin-left: 4px;
+    border: none;
+    background-color: transparent;
+}
+
+.descriptive-stats .editable-span:hover:not(.disabled) {
+    background-color: var(--highlight-hover);
+}
+
+.descriptive-stats .editable-input {
+    border: 1px solid var(--editable-border);
+}
+
+.descriptive-stats .full-width-editable .editable-span,
+.descriptive-stats .full-width-editable .editable-input {
+    width: 90%;
+    display: inline;
+}
+
+
+/* --- SECTION TITLE BARS (ABILITIES, COMBAT) --- */
+.sb-section-title-bar {
+    /* This IS the black bar now */
+    background-color: var(--bg-dark-block);
+    color: var(--text-color-light);
+    padding: 5px 10px;
+    margin: 0 -18px 0 -18px;
+    /* Negative margin to span full width of panel padding */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sb-section-title-bar>span:first-child {
+    /* The title text itself, e.g., "ABILITIES" */
+    font-family: var(--ff-heading);
+    font-size: 1.1em;
+    /* Larger title text */
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+}
+
+.title-bar-icon {
+    margin-right: 10px;
+    font-size: 1.3em;
+}
+
+.mp-section-title-bar {
+    /* New class for the MANA title bar */
+    background-color: var(--bg-dark-block);
+    color: var(--text-color-light);
+    padding: 5px 10px;
+    font-size: 0.9em;
+    /* Match combat header if desired */
+    text-transform: uppercase;
+    letter-spacing: 1.8px;
+    margin: 0 -18px 10px -18px;
+    /* Remove top margin, negative margins to span panel padding */
+    display: flex;
+    justify-content: right;
+    align-items: center;
+    /* Thin separator from combat content if combat has no bottom border */
+}
+
+.mp-section-title-bar span:first-child {
+    /* "MANA" text */
+    font-family: var(--ff-heading);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    flex: 1;
+
+}
+
+.mp-header-stats {
+    /* For "MAX MP: X" */
+    font-family: var(--ff-body);
+    font-size: 0.8em;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-left: 3em;
+    ;
+}
+
+.mana-boxes-container {
+    display: flex;
+    flex-direction: row;
+    gap: 1em;
+}
+
+.mana-box {
+    display: flex;
+    background-color: white;
+    height: 1rem;
+    width: 1rem;
+}
+
+/* COMBAT Header Specifics (Stats on the right of the black bar) */
+.sb-combat-header-bar {
+    /* Uses .sb-section-title-bar */
+}
+
+.sb-combat-header-stats {
+    display: flex;
+    gap: 12px;
+    font-family: var(--ff-body);
+    font-size: 0.8em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sb-combat-header-stats span .editable-span,
+/* Target EditableField children */
+.sb-combat-header-stats span .editable-input {
+    color: var(--text-color-light);
+    font-weight: 700;
+    margin-left: 3px;
+    padding: 0 2px;
+    width: auto;
+    min-width: 1.5em;
+    text-align: center;
+    font-size: 1em;
+    /* Relative to parent span */
+}
+
+.sb-combat-header-stats span .editable-input {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid #777;
+}
+
+
+/* --- ITEM STYLING (Features, Attacks, Actions, etc.) --- */
+.sb-list-item {
+    position: relative;
+    padding: 2px 30px 2px 0;
+    /* Space for remove button */
+    margin-bottom: 0.6em;
+    font-size: 0.85em;
+    line-height: 1.4;
+}
+
+.sb-list-item>p>span:first-child {
+    font-weight: 900;
+}
+
+.sb-list-item:hover .hover-remove-button {
+    opacity: 1;
+    visibility: visible;
+}
+
+.sb-list-item p {
+    margin: 0;
+}
+
+/* Names of features, actions, etc. */
+.sb-list-item .editable-name-field .editable-span,
+.sb-list-item .editable-name-field .editable-input {
+    font-family: var(--ff-body);
+    font-weight: 700;
+    /* Bold */
+    font-style: italic;
+    color: var(--text-color-dark);
+    border: none;
+    background: transparent;
+    padding: 1px 2px;
+}
+
+.sb-list-item .editable-name-field .editable-span:hover:not(.disabled) {
+    background-color: var(--highlight-hover);
+}
+
+.sb-list-item .editable-name-field .editable-input {
+    border: 1px solid var(--editable-border);
+}
+
+/* Descriptions/details of features, actions, etc. */
+.sb-list-item .editable-description-field .editable-span,
+.sb-list-item .editable-description-field .editable-input {
+    margin-left: 4px;
+    font-style: normal;
+    border: none;
+    background: transparent;
+    padding: 1px 2px;
+    width: 95%;
+    display: inline;
+    /* Allow it to wrap but be editable */
+}
+
+.sb-list-item .editable-description-field .editable-span:hover:not(.disabled) {
+    background-color: var(--highlight-hover);
+}
+
+.sb-list-item .editable-description-field .editable-input {
+    border: 1px solid var(--editable-border);
+}
+
+
+/* --- SUB-SECTIONS (Attack Enhancements, Reactions) --- */
+.sb-sub-section {
+    margin-top: 15px;
+    /* Underline for the whole width of the panel */
+    margin-left: -18px;
+    /* Counteract panel padding */
+    margin-right: -18px;
+    /* Counteract panel padding */
+    padding-left: 18px;
+    /* Restore padding for content */
+    padding-right: 18px;
+    /* Restore padding for content */
+    /* border-top: 1px solid var(--text-color-dark); */
+    /* Dark underline */
+}
+
+.sb-sub-section-title {
+    font-family: var(--ff-heading);
+    font-weight: 700;
+    font-size: 1em;
+    color: var(--text-color-dark);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.sb-section-icon {
+    margin-right: 8px;
+    font-size: 1.2em;
+    color: var(--text-color-dark);
+    line-height: 1;
+}
+
+/* Hover Remove Button (ensure it's defined as previously) */
+.hover-remove-button {
+    position: absolute;
+    top: 50%;
+    right: 0px;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #cc0000;
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 1.1em;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease-in-out;
+}
+
+.enhancement-item {
+    padding-left: 18px;
+}
+
+.hover-remove-button:hover {
+    color: #ff0000;
+}

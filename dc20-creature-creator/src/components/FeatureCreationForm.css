@@ -1,0 +1,123 @@
+/* src/components/FeatureCreationForm.css */
+.feature-creation-form {
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-top: 15px;
+    background-color: #f9f9f9;
+}
+
+.feature-creation-form h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.feature-creation-form .form-group {
+    margin-bottom: 12px;
+}
+
+.feature-creation-form label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.feature-creation-form input[type="text"],
+.feature-creation-form input[type="number"],
+.feature-creation-form textarea,
+.feature-creation-form select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 0.95em;
+}
+
+.feature-creation-form textarea {
+    resize: vertical;
+}
+
+.feature-creation-form .button-group {
+    display: flex;
+    gap: 5px;
+    /* Optional: if you want space between buttons */
+    flex-wrap: wrap;
+    /* Allow buttons to wrap */
+}
+
+.feature-creation-form .category-button {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 0.9em;
+    flex-grow: 1;
+    /* Make buttons take available space if few */
+}
+
+.feature-creation-form .category-button.active {
+    background-color: #4A00E0;
+    /* Your theme purple */
+    color: white;
+    border-color: #4A00E0;
+}
+
+.feature-creation-form .category-button:hover:not(.active) {
+    background-color: #f0f0f0;
+}
+
+
+.feature-creation-form .cost-inputs {
+    display: flex;
+    gap: 10px;
+}
+
+.feature-creation-form .cost-inputs>div {
+    flex: 1;
+    /* Distribute space equally */
+}
+
+
+.feature-creation-form .form-actions {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    /* Align buttons to the right */
+    gap: 10px;
+}
+
+.feature-creation-form .form-actions button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.feature-creation-form .button-add {
+    background-color: #28a745;
+    /* Green */
+    color: white;
+}
+
+.feature-creation-form .button-save {
+    background-color: #007bff;
+    /* Blue */
+    color: white;
+}
+
+.feature-creation-form .button-cancel {
+    background-color: #6c757d;
+    /* Grey */
+    color: white;
+    margin-right: auto;
+    /* Push cancel to the left */
+}

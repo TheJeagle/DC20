@@ -1,0 +1,104 @@
+/* --- Styling for InputPanel Feature Lists --- */
+
+.input-panel ul {
+    list-style: none;
+    padding-left: 5px;
+    margin-top: 5px;
+}
+
+.input-panel li {
+    margin-bottom: 8px;
+}
+
+.input-panel li label {
+    display: flex;
+    /* Align checkbox and text */
+    align-items: center;
+    cursor: pointer;
+}
+
+.input-panel input[type="checkbox"] {
+    margin-right: 8px;
+    width: auto;
+    /* Override default 100% width */
+    flex-shrink: 0;
+}
+
+.feature-name {
+    font-weight: 600;
+    /* Semi-bold */
+}
+
+.feature-category {
+    font-size: 0.85em;
+    margin-left: 5px;
+    color: #555;
+    font-style: italic;
+}
+
+.feature-cost {
+    font-size: 0.85em;
+    margin-left: 5px;
+    color: #777;
+}
+
+.feature-description {
+    /* Style if you keep the <p> description visible */
+    font-size: 0.9em;
+    margin: 2px 0 0 25px;
+    /* Indent under checkbox */
+    color: #444;
+}
+
+/* --- Styling for Selected Features List --- */
+.selected-features-section {
+    margin-top: 20px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
+
+.selected-features-section h3 {
+    font-size: 1.1em;
+    margin-bottom: 10px;
+}
+
+.selected-feature-item {
+    display: flex;
+    justify-content: space-between;
+    /* Push button to right */
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px dotted #eee;
+    /* Light separator */
+    margin-bottom: 4px;
+    /* Reduced margin */
+}
+
+.selected-feature-item:last-child {
+    border-bottom: none;
+}
+
+.selected-feature-info {
+    /* Takes up available space */
+    opacity: 1;
+}
+
+.remove-feature-button {
+    background: none;
+    border: none;
+    color: #cc0000;
+    /* Red color */
+    font-size: 1.5em;
+    /* Make 'X' bigger */
+    line-height: 1;
+    padding: 0 5px;
+    margin-left: 10px;
+    cursor: pointer;
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+.remove-feature-button:hover {
+    opacity: 1;
+    color: #ff0000;
+}
