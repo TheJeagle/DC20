@@ -1,15 +1,50 @@
 // src/pages/HomePage.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { db } from '../firebase';
+import { collection, getDocs, query, orderBy, limit, doc, updateDoc, increment, setDoc } from 'firebase/firestore';
 import './HomePage.css'; // Create this CSS file
 
-const HomePage = () => {
-    // In a real app, highlightedCreatures would be fetched from Firestore
-    const highlightedCreatures = [
-        { id: '1', name: 'Grimfang Alpha', type: 'Beast', role: 'Lurker', submittedBy: 'UserX' },
-        { id: '2', name: 'Stoneheart Guardian', type: 'Construct', role: 'Defender', submittedBy: 'UserY' },
-        { id: '3', name: 'Nether Lich', type: 'Undead', role: 'Caster', submittedBy: 'UserZ' },
-    ];
+const HomePage = ({ currentUser }) => {
+    const [highlightedCreatures, setHighlightedCreatures] = useState([]);
+
+    useEffect(() => {
+        const fetchCreatures = async () => {
+            try {
+                const q = query(
+                    collection(db, 'savedCreatures'),
+                    orderBy('votes', 'desc'),
+                    limit(3)
+                );
+                const snapshot = await getDocs(q);
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setHighlightedCreatures(data);
+            } catch (err) {
+                console.error('Error fetching creatures:', err);
+            }
+        };
+        fetchCreatures();
+    }, []);
+
+    const handleVote = async (creatureId) => {
+        if (!currentUser) {
+            alert('Please log in to vote.');
+            return;
+        }
+        try {
+            const creatureRef = doc(db, 'savedCreatures', creatureId);
+            const voteRef = doc(db, 'savedCreatures', creatureId, 'votes', currentUser.uid);
+            await setDoc(voteRef, { userId: currentUser.uid });
+            await updateDoc(creatureRef, { votes: increment(1) });
+            setHighlightedCreatures(prev =>
+                prev.map(c =>
+                    c.id === creatureId ? { ...c, votes: (c.votes || 0) + 1 } : c
+                )
+            );
+        } catch (err) {
+            console.error('Error voting:', err);
+        }
+    };
 
     return (
         <div className="homepage-container">
@@ -31,6 +66,9 @@ const HomePage = () => {
                             <h3>{creature.name}</h3>
                             <p>{creature.type} | {creature.role}</p>
                             <p className="submitted-by">By: {creature.submittedBy}</p>
+                            <button onClick={() => handleVote(creature.id)} className="vote-button">
+                                Upvote ({creature.votes || 0})
+                            </button>
                             {/* <Link to={`/creatures/${creature.id}`} className="view-details-button">View Details</Link> */}
                         </div>
                     ))}
