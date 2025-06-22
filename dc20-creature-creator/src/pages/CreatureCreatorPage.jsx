@@ -6,7 +6,7 @@ import InputPanel from '../components/InputPanel';
 import StatBlockPanel from '../components/StatBlockPanel';
 import { calculateCreatureStats } from '../utils/calculateStats';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, getDocs, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const CreatureCreatorPage = ({ currentUser }) => {
   // --- State for Creature Inputs ---
