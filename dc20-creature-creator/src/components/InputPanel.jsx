@@ -111,7 +111,16 @@ const InputPanel = ({
                     </div>
                     <div className="form-group">
                         <label htmlFor="level">Level (0-10+):</label>
-                        <input type="number" id="level" value={level} min="0" onChange={(e) => setLevel(parseInt(e.target.value))} />
+                        <input
+                            type="number"
+                            id="level"
+                            value={level}
+                            min="0"
+                            onChange={(e) => {
+                                const val = parseInt(e.target.value, 10);
+                                setLevel(isNaN(val) ? 0 : val);
+                            }}
+                        />
                     </div>
                     <div className="form-group">
                         <label htmlFor="power">Power Tier:</label>
