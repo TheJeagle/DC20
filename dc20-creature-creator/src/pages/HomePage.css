@@ -6,24 +6,25 @@
 .hero-section {
     text-align: center;
     padding: 40px 20px;
-    background-color: #f4f6f8;
-    /* Light grey background */
+    background-color: var(--color-bg);
     border-radius: 8px;
     margin-bottom: 30px;
+    color: var(--color-text);
+    font-family: var(--ff-body);
 }
 
 .hero-section h1 {
-    font-family: var(--ff-heading, 'Cinzel', serif);
+    font-family: var(--ff-heading);
     font-size: 2.5em;
     margin-bottom: 15px;
-    color: #2c3e50;
-    /* Dark blue-grey */
+    color: var(--color-accent);
 }
 
 .site-purpose {
+    font-family: var(--ff-body);
     font-size: 1.1em;
     line-height: 1.6;
-    color: #555;
+    color: var(--color-text-muted);
     max-width: 700px;
     margin: 0 auto 25px auto;
 }
@@ -33,16 +34,15 @@
     padding: 12px 25px;
     font-size: 1.1em;
     font-weight: 600;
-    color: white;
-    background-color: #27ae60;
-    /* Green */
+    color: var(--color-bg);
+    background-color: var(--color-accent);
     text-decoration: none;
     border-radius: 5px;
     transition: background-color 0.2s ease;
 }
 
 .cta-button:hover {
-    background-color: #229954;
+    background-color: var(--color-accent-dark);
 }
 
 .highlighted-creatures-section {
@@ -50,11 +50,11 @@
 }
 
 .highlighted-creatures-section h2 {
-    font-family: var(--ff-heading, 'Cinzel', serif);
+    font-family: var(--ff-heading);
     text-align: center;
     font-size: 2em;
     margin-bottom: 25px;
-    color: #2c3e50;
+    color: var(--color-accent);
 }
 
 .creatures-grid {
@@ -67,28 +67,40 @@
     border: 1px solid var(--border-light, #ddd);
     border-radius: 6px;
     padding: 15px;
-    background-color: white;
+    background-color: var(--color-bg);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
 }
 
 .creature-card-preview h3 {
-    font-family: var(--ff-heading, 'Cinzel', serif);
+    font-family: var(--ff-heading);
     margin-top: 0;
     margin-bottom: 8px;
     font-size: 1.3em;
 }
 
 .creature-card-preview p {
+    font-family: var(--ff-body);
     font-size: 0.9em;
     margin-bottom: 5px;
-    color: #555;
+    color: var(--color-text);
 }
 
 .creature-card-preview .submitted-by {
+    font-family: var(--ff-body);
     font-size: 0.8em;
     font-style: italic;
-    color: #777;
+    color: var(--color-text-muted);
     margin-top: 10px;
+}
+
+@media (max-width: 600px) {
+    .hero-section {
+        padding: 20px 10px;
+    }
+
+    .creatures-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* .view-details-button { ... } */
