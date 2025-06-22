@@ -17,7 +17,10 @@ const HomePage = ({ currentUser }) => {
                     limit(3)
                 );
                 const snapshot = await getDocs(q);
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const data = snapshot.docs.map(doc => {
+                    const d = doc.data();
+                    return { id: doc.id, ...d, actions: d.actions || [] };
+                });
                 setHighlightedCreatures(data);
             } catch (err) {
                 console.error('Error fetching creatures:', err);
