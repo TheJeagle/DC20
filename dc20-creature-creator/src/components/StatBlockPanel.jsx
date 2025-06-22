@@ -220,6 +220,7 @@ const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature, onActi
 
                     </>
 
+
                     {/* Default attacks with inline editable fields */}
                     {display.Combat.Attacks && display.Combat.Attacks.filter(a => !a.originalFeatureId).map((attack, index) => (
                         <div key={`default-attack-${index}`} className="sb-list-item attack-item">
@@ -230,6 +231,27 @@ const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature, onActi
                                 }}
                                 onSaveField={(field, val) => handleSave(`Combat_Attacks_${index}_${field}_set`, val)}
                             />
+                    {/* OLD WAY
+                   
+                    {display.Combat.Attacks && display.Combat.Attacks.filter(a => !a.originalFeatureId).map((attack, index) => (
+                        <div key={`default-attack-${index}`} className="sb-list-item attack-item">
+                            <p>
+                                <EditableField
+                                    value={attack.name}
+                                    onSave={(f, val) => handleSave(`Combat_Attacks_${index}_name_set`, val)}
+                                    fieldName={`Combat_Attacks_${index}_name_set`}
+                                    fieldType="text"
+                                    className="editable-name-field"
+                                />:{' '}
+                                <EditableField
+                                    value={attack.details}
+                                    onSave={(f, val) => handleSave(`Combat_Attacks_${index}_details_set`, val)}
+                                    fieldName={`Combat_Attacks_${index}_details_set`}
+                                    fieldType="text"
+                                    className="editable-description-field"
+                                />
+                            </p>
+                        */}
                         </div>
                     ))}
 
