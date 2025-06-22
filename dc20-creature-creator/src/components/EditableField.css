@@ -9,6 +9,11 @@
     /* Or block if it needs to fill width */
 }
 
+/* Style span when editing is allowed */
+.editable-span:not(.disabled) {
+    border-bottom: 1px solid var(--color-accent);
+}
+
 .editable-span:not(.disabled):hover {
     background-color: #e0e0e0;
     /* Light grey highlight on hover */
