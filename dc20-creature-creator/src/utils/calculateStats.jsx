@@ -193,10 +193,15 @@ export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverride
                 if (category === 'reaction' && !costParts.length) displayCostStr = 'Reaction';
 
                 let descDisplayParts = [];
+
+                if (descriptionCore || description || name) {
+                    descDisplayParts.push(descriptionCore || description || name);
+                }
                 if (finalActionDamage > 0) {
                     descDisplayParts.push(`${finalActionDamage} ${damageType || 'damage'} damage${targetsDefense ? ` vs ${targetsDefense}` : ''}.`);
                 }
-                const targetInfo = targetDescription || (areaShape ? (areaSize ? `${areaSize}-space ${areaShape}` : areaShape) : 'target');
+                let targetInfo = targetDescription || (areaShape ? (areaSize ? `${areaSize}-space ${areaShape}` : areaShape) : 'target');
+            
                 let rangeInfo = '';
                 if (rangeValue > 0 && rangeUnit === 'space') {
                     rangeInfo = `${rangeValue} space(s)`;
