@@ -5,6 +5,7 @@ import RightBar from '../components/RightBar';
 import InputPanel from '../components/InputPanel';
 import StatBlockPanel from '../components/StatBlockPanel';
 import { calculateCreatureStats } from '../utils/calculateStats';
+import { creatureActionSchema } from '../data/actionSchema';
 import { db } from '../firebase';
 import { collection, query, getDocs, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -29,6 +30,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
 
   // --- State for the Final Calculated Stat Block ---
   const [statBlock, setStatBlock] = useState(null);
+  const [actions, setActions] = useState([]);
 
   const [isCreatingFeature, setIsCreatingFeature] = useState(false);
 
@@ -95,6 +97,41 @@ const CreatureCreatorPage = ({ currentUser }) => {
     setStatBlock(newCalculatedStats);
     // console.log("Stat block recalculated with overrides:", newCalculatedStats);
   }, [creatureName, level, power, type, role, size, selectedFeatures, overrides]); // Added 'overrides'
+
+  // --- Effect 5: Build actions array from selected features and default attacks ---
+  useEffect(() => {
+    if (!statBlock) { setActions([]); return; }
+
+    const defaultActions = (statBlock.FinalWithDeltas?.DefaultAttacks || []).map(att => ({
+      name: att.name,
+      costAP: att.costAP || 0,
+      costMP: 0,
+      damageMod: 0,
+      saveDCMod: 0,
+      range: att.range,
+      targets: att.targetDescription,
+      actionType: att.type,
+      description: att.details,
+      source: 'default',
+    }));
+
+    const featureActions = selectedFeatures
+      .filter(f => f.category === 'action')
+      .map(f => ({
+        name: f.name,
+        costAP: f.costAP || 0,
+        costMP: f.costMP || 0,
+        damageMod: f.damageMod || 0,
+        saveDCMod: f.saveDCMod || 0,
+        range: f.range || '',
+        targets: f.targets || '',
+        actionType: f.actionType || '',
+        description: f.descriptionCore || f.description || '',
+        source: 'feature',
+      }));
+
+    setActions([...defaultActions, ...featureActions]);
+  }, [statBlock, selectedFeatures]);
 
   // --- Handler for selecting/deselecting features via checkboxes ---
   const handleFeatureSelect = (feature, isSelected) => {
@@ -238,6 +275,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
     setType('humanoid'); setRole('none'); setSize('medium');
     setSelectedFeatures([]);
     setOverrides({}); // <<< CLEAR OVERRIDES
+    setActions([]);
     setIsCreatingFeature(false);
   };
 
@@ -253,6 +291,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
       type,
       role,
       size,
+      actions,
       selectedFeatureIds: selectedFeatures.map(f => f.id),
       statModifiers: overrides, // Save the deltas/sets
       votes: 0,
