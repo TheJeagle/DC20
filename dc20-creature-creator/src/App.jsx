@@ -48,7 +48,7 @@ function App() {
             <Navbar currentUser={currentUser} onLogout={handleLogout} />
             <div className="main-content-area"> {/* Optional wrapper for content below navbar */}
                 <Routes>
-                    <Route path="/" element={<HomePage />} />
+                    <Route path="/" element={<HomePage currentUser={currentUser} />} />
                     <Route path="/create" element={
                         <CreatureCreatorPage currentUser={currentUser} />
                     } />
