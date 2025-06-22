@@ -34,7 +34,6 @@ const CreatureCreatorPage = ({ currentUser }) => {
 
   // --- State for the Final Calculated Stat Block ---
   const [statBlock, setStatBlock] = useState(null);
-  const [actions, setActions] = useState([]);
 
   const [isCreatingFeature, setIsCreatingFeature] = useState(false);
 
