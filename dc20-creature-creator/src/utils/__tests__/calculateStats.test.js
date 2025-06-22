@@ -31,4 +31,37 @@ describe('calculateCreatureStats', () => {
     expect(result.Display.Combat.AP).toBe('4');
     expect(result.Display.Combat.Speed).toBe('5');
   });
+
+  it('applies damageMod and saveDCMod in action descriptions', () => {
+    const inputs = {
+      level: 1,
+      power: 'normal',
+      role: 'none',
+      type: 'beast',
+      size: 'medium',
+      creatureName: 'Mod Test'
+    };
+
+    const action = {
+      name: 'Fiery Strike',
+      category: 'action',
+      actionType: 'Melee Spell Attack',
+      costAP: 1,
+      damageMod: 2,
+      saveAttribute: 'Mig',
+      saveDCMod: 2,
+      damageType: 'fire',
+      targetsDefense: 'PD',
+      rangeValue: 1,
+      rangeUnit: 'space',
+      targetDescription: '1 creature',
+      descriptionCore: 'Strike with fire.'
+    };
+
+    const result = calculateCreatureStats(inputs, [action], {});
+    const displayAttack = result.Display.Combat.Attacks.find(a => a.name.startsWith('Fiery Strike'));
+    expect(displayAttack).toBeDefined();
+    expect(displayAttack.details).toContain('4 fire damage vs PD.');
+    expect(displayAttack.details).toContain('DC 16');
+  });
 });
