@@ -259,7 +259,6 @@ const CreatureCreatorPage = ({ currentUser }) => {
       createdAt: serverTimestamp(),
       ownerId: currentUser.uid,
       submittedBy: currentUser.email,
-      votes: 0,
     };
     try {
       const docRef = await addDoc(collection(db, "savedCreatures"), creatureDataToSave);
