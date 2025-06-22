@@ -2,6 +2,7 @@
 import React from 'react';
 import './StatBlockPanel.css'; // Main CSS for the stat block
 import EditableField from './EditableField';
+import ActionEditor from './ActionEditor';
 import HoverRemoveButton from './HoverRemoveButton';
 import {
     GiHeartPlus, GiRosaShield, GiCrownedExplosion,
@@ -9,7 +10,7 @@ import {
     GiMagicSwirl, GiCrossedSwords, GiUpgrade, GiReturnArrow, GiSandsOfTime
 } from 'react-icons/gi';
 
-const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature }) => {
+const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature, onActionUpdate }) => {
     if (!fullStatBlock || !fullStatBlock.Display || !fullStatBlock.CalculatedBeforeDeltas || !fullStatBlock.FinalWithDeltas) {
         return <div className="stat-block-panel"><p>Calculating stats...</p></div>;
     }
@@ -49,6 +50,12 @@ const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature }) => {
             if (i === pathParts.length - 1) originalCalcValue = tempOriginalValue;
         }
         onStatOverride(fieldName, newAbsoluteValueFromInput, originalCalcValue);
+    };
+
+    const handleActionFieldSave = (actionIndex, field, value) => {
+        if (onActionUpdate) {
+            onActionUpdate(actionIndex, field, value);
+        }
     };
 
 
@@ -213,22 +220,24 @@ const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature }) => {
 
                     </>
 
-                    {display.Combat.Attacks && display.Combat.Attacks.map((attack, index) => (
-                        <div key={attack.originalFeatureId || `attack-${index}`} className="sb-list-item attack-item">
-                            <p>
-                                <EditableField value={attack.name} onSave={(f, val) => handleSave(`Combat_Attacks_${index}_name_set`, val)} fieldName={`Combat_Attacks_${index}_name_set`} fieldType="text" className="editable-name-field" />: {' '}
-                                <EditableField value={attack.details} onSave={(f, val) => handleSave(`Combat_Attacks_${index}_details_set`, val)} fieldName={`Combat_Attacks_${index}_details_set`} fieldType="text" className="editable-description-field" />
-                            </p>
-                            {attack.originalFeatureId && <HoverRemoveButton onClick={() => onRemoveFeature(findOriginalItemForRemove(attack, "CombatActions"))} />}
+                    {/* Default attacks remain simple text */}
+                    {display.Combat.Attacks && display.Combat.Attacks.filter(a => !a.originalFeatureId).map((attack, i) => (
+                        <div key={`default-attack-${i}`} className="sb-list-item attack-item">
+                            <p>{attack.name}: {attack.details}</p>
                         </div>
                     ))}
-                    {display.Combat.OtherActions && display.Combat.OtherActions.map((action, index) => (
-                        <div key={action.originalFeatureId || `otheraction-${index}`} className="sb-list-item action-item">
-                            <p>
-                                <EditableField value={action.name} onSave={(f, val) => handleSave(`Combat_OtherActions_${index}_name_set`, val)} fieldName={`Combat_OtherActions_${index}_name_set`} fieldType="text" className="editable-name-field" />: {' '}
-                                <EditableField value={action.details} onSave={(f, val) => handleSave(`Combat_OtherActions_${index}_details_set`, val)} fieldName={`Combat_OtherActions_${index}_details_set`} fieldType="text" className="editable-description-field" />
-                            </p>
-                            {action.originalFeatureId && <HoverRemoveButton onClick={() => onRemoveFeature(findOriginalItemForRemove(action, "CombatActions"))} />}
+
+                    {finalRaw.CombatActions && finalRaw.CombatActions.filter(a => a.actionType && (a.actionType.includes('Attack') || a.actionType.includes('Spell'))).map((act, idx) => (
+                        <div key={act.originalFeatureId || `attack-${idx}`} className="sb-list-item attack-item">
+                            <ActionEditor action={act} onChange={(field, val) => handleActionFieldSave(idx, field, val)} />
+                            {act.originalFeatureId && <HoverRemoveButton onClick={() => onRemoveFeature(act)} />}
+                        </div>
+                    ))}
+
+                    {finalRaw.CombatActions && finalRaw.CombatActions.filter(a => !a.actionType || !(a.actionType.includes('Attack') || a.actionType.includes('Spell'))).map((act, idx) => (
+                        <div key={act.originalFeatureId || `action-${idx}`} className="sb-list-item action-item">
+                            <ActionEditor action={act} onChange={(field, val) => handleActionFieldSave(idx, field, val)} />
+                            {act.originalFeatureId && <HoverRemoveButton onClick={() => onRemoveFeature(act)} />}
                         </div>
                     ))}
                 </div>
