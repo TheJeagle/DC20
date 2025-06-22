@@ -61,13 +61,24 @@ const EditableField = ({
                 // finalValueToSave = 0;
                 // Option C: Don't save, keep editing (more complex UI)
                 // setIsEditing(true); return;
-                console.warn(`Invalid number input "${currentValue}" for ${fieldName}. Saving 0.`);
+                if (process.env.NODE_ENV !== 'production') {
+                    console.warn(
+                        `Invalid number input "${currentValue}" for ${fieldName}. Saving 0.`
+                    );
+                }
             } else {
                 finalValue = isNaN(numValue) ? value : numValue; // Revert if not a number
             }
 
         }
-        console.log("In Editablefield: Onsave:", fieldName, " And: ", finalValue);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(
+                "In Editablefield: Onsave:",
+                fieldName,
+                " And: ",
+                finalValue
+            );
+        }
         onSave(fieldName, finalValue); // Pass fieldName and new value
         setIsEditing(false);
     };
