@@ -169,7 +169,7 @@ export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverride
             descriptionCore, costAP = 0, costMP = 0, // costSP = 0,
             actionType, damageMod = 0, damageType, targetsDefense,
             rangeValue = 0, rangeUnit, areaShape, areaSize, targetDescription,
-            saveAttribute, conditionApplied, conditionDuration, healingAmount,
+            saveAttribute, saveDCMod = 0, conditionApplied, conditionDuration, healingAmount,
             description, value, displayValue } = feature; // Removed 'effects' as it's processed earlier
 
         switch (category) {
@@ -213,7 +213,8 @@ export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverride
                 }
 
                 if (saveAttribute) {
-                    let saveStr = `Target makes a ${saveAttribute} save (DC ${calculated.SaveDC})`;
+                    const finalActionSaveDC = (calculated.SaveDC || 0) + (saveDCMod || 0);
+                    let saveStr = `Target makes a ${saveAttribute} save (DC ${finalActionSaveDC})`;
                     saveStr += conditionApplied ? ` or becomes ${conditionApplied}` : ` for effect`;
                     if (conditionApplied && conditionDuration) saveStr += ` (${conditionDuration.replace("your", "its")})`;
                     descDisplayParts.push(saveStr + ".");
@@ -226,6 +227,7 @@ export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverride
 
                 calculated.CombatActions.push({
                     ...feature, name, calculatedDamage: finalActionDamage,
+                    calculatedSaveDC: (calculated.SaveDC || 0) + (saveDCMod || 0),
                     displayCost: displayCostStr,
                     displayDescription: descDisplayParts.filter(p => p && p.trim() !== '').join(' '),
                     originalFeatureId: id || originalFeatureId
@@ -233,7 +235,10 @@ export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverride
                 break;
             case 'attack_enhancement':
                 let enhDescParts = [descriptionCore || description || name || ''];
-                if (saveAttribute) enhDescParts.push(`Target makes a ${saveAttribute} save (DC ${calculated.SaveDC})`);
+                if (saveAttribute) {
+                    const enhSaveDC = (calculated.SaveDC || 0) + (saveDCMod || 0);
+                    enhDescParts.push(`Target makes a ${saveAttribute} save (DC ${enhSaveDC})`);
+                }
                 if (conditionApplied) enhDescParts.push(conditionApplied ? `or becomes ${conditionApplied}${conditionDuration ? ` (${conditionDuration.replace("your", "its")})` : ''}` : '');
                 calculated.AttackEnhancements.push({ ...feature, name, cost: costAP > 0 ? `+${costAP} AP` : (costMP > 0 ? `+${costMP} MP` : 'Special'), description: enhDescParts.filter(Boolean).join('. '), originalFeatureId: id || originalFeatureId });
                 break;

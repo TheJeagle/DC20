@@ -32,33 +32,38 @@ describe('calculateCreatureStats', () => {
     expect(result.Display.Combat.Speed).toBe('5');
   });
 
-  it('formats actions using damage and save modifiers', () => {
+
+  it('applies damageMod and saveDCMod in action descriptions', () => {
     const inputs = {
       level: 1,
       power: 'normal',
       role: 'none',
       type: 'beast',
       size: 'medium',
-      creatureName: 'Test Creature'
+      creatureName: 'Mod Test'
     };
 
-    const actions = [
-      {
-        name: 'Power Strike',
-        actionType: 'Melee Martial Attack',
-        damageMod: 1,
-        damageType: 'physical',
-        targetsDefense: 'PD',
-        costAP: 1,
-        saveAttribute: 'Agi',
-        saveDCMod: 2
-      }
-    ];
+    const action = {
+      name: 'Fiery Strike',
+      category: 'action',
+      actionType: 'Melee Spell Attack',
+      costAP: 1,
+      damageMod: 2,
+      saveAttribute: 'Mig',
+      saveDCMod: 2,
+      damageType: 'fire',
+      targetsDefense: 'PD',
+      rangeValue: 1,
+      rangeUnit: 'space',
+      targetDescription: '1 creature',
+      descriptionCore: 'Strike with fire.'
+    };
 
-    const result = calculateCreatureStats(inputs, [], {}, actions);
-    expect(result.FormattedActions.length).toBe(1);
-    const formatted = result.FormattedActions[0];
-    expect(formatted.details).toContain('3 physical damage');
-    expect(formatted.details).toContain('DC 16');
+    const result = calculateCreatureStats(inputs, [action], {});
+    const displayAttack = result.Display.Combat.Attacks.find(a => a.name.startsWith('Fiery Strike'));
+    expect(displayAttack).toBeDefined();
+    expect(displayAttack.details).toContain('4 fire damage vs PD.');
+    expect(displayAttack.details).toContain('DC 16');
+
   });
 });
