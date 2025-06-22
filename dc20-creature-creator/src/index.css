@@ -1,4 +1,5 @@
 :root {
+
   --ff-body: 'Inter', sans-serif;
   --ff-heading: 'Cinzel', serif;
   --color-bg: #000;
@@ -6,6 +7,7 @@
   --color-accent: #8e44ad;
 
   font-family: var(--ff-body);
+
   line-height: 1.5;
   font-weight: 400;
 
