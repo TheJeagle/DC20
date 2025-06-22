@@ -70,14 +70,18 @@ export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverride
     const attributeLevelScores = attributeScoresByLevel.find(a => a.level === level)?.scores || [0, 0, 0, 0];
     if (roleMods.AttributePriority) {
         roleMods.AttributePriority.forEach((attrName, index) => {
-            if (calculated.Attributes.hasOwnProperty(attrName)) calculated.Attributes[attrName] = attributeLevelScores[index];
+            if (calculated.Attributes.hasOwnProperty(attrName)) {
+                calculated.Attributes[attrName] = attributeLevelScores[index];
+            }
         });
-        calculated.Attributes.Prime = calculated.Attributes[roleMods.AttributePriority[0]] || 0;
     }
 
     // --- 5. Calculate Skills (Initial Calculation) ---
     const getAttributeForSkill = (skillName, attrs) => {
-        if (skillName === "awareness") return attrs.Prime || 0;
+        if (skillName === "awareness") {
+            const primeAttr = roleMods.AttributePriority?.[0];
+            return primeAttr ? (attrs[primeAttr] || 0) : (attrs.Prime || 0);
+        }
         if (["athletics", "intimidation"].includes(skillName)) return attrs.Mig || 0;
         if (["acrobatics", "trickery", "stealth"].includes(skillName)) return attrs.Agi || 0;
         if (["animal handling", "influence", "insight"].includes(skillName)) return attrs.Cha || 0;
@@ -108,7 +112,6 @@ export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverride
             });
         }
     });
-    if (roleMods.AttributePriority) calculated.Attributes.Prime = calculated.Attributes[roleMods.AttributePriority[0]] || 0;
 
 
     // --- Create a snapshot of stats AFTER features, BEFORE user deltas ---
