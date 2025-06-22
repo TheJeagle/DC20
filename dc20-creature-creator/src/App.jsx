@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage';
 import CreatureCreatorPage from './pages/CreatureCreatorPage'; // Your existing creator logic will move here
 import AccountPage from './pages/AccountPage'; // Placeholder
 import AuthPage from './pages/AuthPage'; // Placeholder for a dedicated login page
+import MyCreaturesPage from './pages/MyCreaturesPage';
 
 
 // --- Shared Components ---
@@ -57,8 +58,8 @@ function App() {
                     <Route path="/account" element={currentUser ? <AccountPage /> : <AuthPage />} />
                     <Route path="/login" element={<AuthPage />} />
                     <Route path="/register" element={<AuthPage />} />
+                    <Route path="/my-creatures" element={<MyCreaturesPage currentUser={currentUser} />} />
                     {/* <Route path="/creatures/:creatureId" element={<CreatureViewPage />} /> */}
-                    {/* <Route path="/my-creatures" element={currentUser ? <MyCreaturesPage /> : <LoginPage />} /> */}
                 </Routes>
             </div>
         </>

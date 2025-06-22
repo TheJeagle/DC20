@@ -56,6 +56,9 @@ const HomePage = ({ currentUser }) => {
                     bring your worlds to life!
                 </p>
                 <Link to="/create" className="cta-button">Start Creating Now</Link>
+                {currentUser && (
+                    <Link to="/my-creatures" className="cta-button">My Creatures</Link>
+                )}
             </section>
 
             <section className="highlighted-creatures-section">

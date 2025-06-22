@@ -247,10 +247,18 @@ const CreatureCreatorPage = ({ currentUser }) => {
     if (!creatureName.trim() || !statBlock) { alert("Name/stats required."); return; }
     // console.log("Saving creature with overrides:", overrides);
     const creatureDataToSave = {
-      name: creatureName, level, power, type, role, size,
+      name: creatureName,
+      level,
+      power,
+      type,
+      role,
+      size,
       selectedFeatureIds: selectedFeatures.map(f => f.id),
       statModifiers: overrides, // Save the deltas/sets
       createdAt: serverTimestamp(),
+      ownerId: currentUser.uid,
+      submittedBy: currentUser.email,
+      votes: 0,
     };
     try {
       const docRef = await addDoc(collection(db, "savedCreatures"), creatureDataToSave);
