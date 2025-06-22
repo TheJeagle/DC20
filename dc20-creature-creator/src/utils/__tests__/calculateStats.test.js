@@ -31,4 +31,34 @@ describe('calculateCreatureStats', () => {
     expect(result.Display.Combat.AP).toBe('4');
     expect(result.Display.Combat.Speed).toBe('5');
   });
+
+  it('formats actions using damage and save modifiers', () => {
+    const inputs = {
+      level: 1,
+      power: 'normal',
+      role: 'none',
+      type: 'beast',
+      size: 'medium',
+      creatureName: 'Test Creature'
+    };
+
+    const actions = [
+      {
+        name: 'Power Strike',
+        actionType: 'Melee Martial Attack',
+        damageMod: 1,
+        damageType: 'physical',
+        targetsDefense: 'PD',
+        costAP: 1,
+        saveAttribute: 'Agi',
+        saveDCMod: 2
+      }
+    ];
+
+    const result = calculateCreatureStats(inputs, [], {}, actions);
+    expect(result.FormattedActions.length).toBe(1);
+    const formatted = result.FormattedActions[0];
+    expect(formatted.details).toContain('3 physical damage');
+    expect(formatted.details).toContain('DC 16');
+  });
 });
