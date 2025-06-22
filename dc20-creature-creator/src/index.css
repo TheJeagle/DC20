@@ -1,5 +1,11 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --ff-body: 'Inter', sans-serif;
+  --ff-heading: 'Cinzel', serif;
+  --color-bg: #000;
+  --color-text: #fff;
+  --color-accent: #8e44ad;
+
+  font-family: var(--ff-body);
   line-height: 1.5;
   font-weight: 400;
 
@@ -25,10 +31,11 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--ff-body);
 }
 
 h1 {
