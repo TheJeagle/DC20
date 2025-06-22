@@ -32,6 +32,7 @@ describe('calculateCreatureStats', () => {
     expect(result.Display.Combat.Speed).toBe('5');
   });
 
+
   it('applies damageMod and saveDCMod in action descriptions', () => {
     const inputs = {
       level: 1,
@@ -63,5 +64,6 @@ describe('calculateCreatureStats', () => {
     expect(displayAttack).toBeDefined();
     expect(displayAttack.details).toContain('4 fire damage vs PD.');
     expect(displayAttack.details).toContain('DC 16');
+
   });
 });

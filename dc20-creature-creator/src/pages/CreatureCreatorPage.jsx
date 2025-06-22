@@ -4,7 +4,11 @@ import './CreatureCreatorPage.css'; // Your main stylesheet
 import RightBar from '../components/RightBar';
 import InputPanel from '../components/InputPanel';
 import StatBlockPanel from '../components/StatBlockPanel';
-import { calculateCreatureStats } from '../utils/calculateStats';
+
+import { calculateCreatureStats, generateDefaultActionFeatures } from '../utils/calculateStats';
+
+import { creatureActionSchema } from '../data/actionSchema';
+
 import { db } from '../firebase';
 import { collection, query, getDocs, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -23,14 +27,23 @@ const CreatureCreatorPage = ({ currentUser }) => {
   const [availableTypeFeatures, setAvailableTypeFeatures] = useState([]);
   const [availableRoleFeatures, setAvailableRoleFeatures] = useState([]);
   const [selectedFeatures, setSelectedFeatures] = useState([]);
+  const [actions, setActions] = useState([]);
 
   // --- State for Overrides (Deltas and Sets) ---
   const [overrides, setOverrides] = useState({});
 
   // --- State for the Final Calculated Stat Block ---
   const [statBlock, setStatBlock] = useState(null);
+  const [actions, setActions] = useState([]);
 
   const [isCreatingFeature, setIsCreatingFeature] = useState(false);
+
+  // Initialize default actions on mount
+  useEffect(() => {
+    const inputs = { level, power: power.toLowerCase(), role, type, size, creatureName };
+    const defs = generateDefaultActionFeatures(inputs);
+    setActions(defs);
+  }, []);
 
   // --- Effect 1: Fetch ALL features ONCE on component mount ---
   useEffect(() => {
@@ -96,6 +109,41 @@ const CreatureCreatorPage = ({ currentUser }) => {
     // console.log("Stat block recalculated with overrides:", newCalculatedStats);
   }, [creatureName, level, power, type, role, size, selectedFeatures, overrides]); // Added 'overrides'
 
+  // --- Effect 5: Build actions array from selected features and default attacks ---
+  useEffect(() => {
+    if (!statBlock) { setActions([]); return; }
+
+    const defaultActions = (statBlock.FinalWithDeltas?.DefaultAttacks || []).map(att => ({
+      name: att.name,
+      costAP: att.costAP || 0,
+      costMP: 0,
+      damageMod: 0,
+      saveDCMod: 0,
+      range: att.range,
+      targets: att.targetDescription,
+      actionType: att.type,
+      description: att.details,
+      source: 'default',
+    }));
+
+    const featureActions = selectedFeatures
+      .filter(f => f.category === 'action')
+      .map(f => ({
+        name: f.name,
+        costAP: f.costAP || 0,
+        costMP: f.costMP || 0,
+        damageMod: f.damageMod || 0,
+        saveDCMod: f.saveDCMod || 0,
+        range: f.range || '',
+        targets: f.targets || '',
+        actionType: f.actionType || '',
+        description: f.descriptionCore || f.description || '',
+        source: 'feature',
+      }));
+
+    setActions([...defaultActions, ...featureActions]);
+  }, [statBlock, selectedFeatures]);
+
   // --- Handler for selecting/deselecting features via checkboxes ---
   const handleFeatureSelect = (feature, isSelected) => {
     setSelectedFeatures(prev =>
@@ -103,6 +151,13 @@ const CreatureCreatorPage = ({ currentUser }) => {
         ? (prev.find(f => f.id === feature.id) ? prev : [...prev, feature])
         : prev.filter(f => f.id !== feature.id)
     );
+    if (feature.category === 'action') {
+      setActions(prev =>
+        isSelected
+          ? (prev.find(a => a.id === feature.id) ? prev : [...prev, feature])
+          : prev.filter(a => a.id !== feature.id)
+      );
+    }
   };
 
   // --- Handler for removing features from selected list OR directly from stat block ---
@@ -113,6 +168,9 @@ const CreatureCreatorPage = ({ currentUser }) => {
     }
     setSelectedFeatures(prev => prev.filter(f => f.id !== featureToRemove.id));
     console.log("Removed feature:", featureToRemove.name);
+    if (featureToRemove.category === 'action') {
+      setActions(prev => prev.filter(a => a.id !== featureToRemove.id));
+    }
   };
 
   // --- Handler for when a user edits a field in StatBlockPanel ---
@@ -214,12 +272,33 @@ const CreatureCreatorPage = ({ currentUser }) => {
   };
   // --- END OF handleStatOverride DEFINITION ---
 
+  const handleActionUpdate = (actionIndex, field, value) => {
+    setSelectedFeatures(prev => {
+      const actionFeatures = prev.filter(f => f.category === 'action');
+      const target = actionFeatures[actionIndex];
+      if (!target) return prev;
+      const targetId = target.id;
+      return prev.map(f => {
+        if (f.id !== targetId) return f;
+        let newVal = value;
+        if (['costAP','costMP','costSP','damageMod','saveDCMod','rangeValue','areaSize'].includes(field)) {
+          const num = parseInt(value, 10);
+          newVal = isNaN(num) ? 0 : num;
+        }
+        return { ...f, [field]: newVal };
+      });
+    });
+  };
+
 
   // --- Custom Feature Creation Handlers ---
   const handleToggleFeatureCreationForm = () => setIsCreatingFeature(prev => !prev);
   const handleAddCustomFeatureToSelection = (newFeatureData) => {
     const featureWithId = newFeatureData.id ? newFeatureData : { ...newFeatureData, id: `custom-${Date.now()}-${Math.random().toString(16).slice(2)}` };
     setSelectedFeatures(prev => [...prev, featureWithId]);
+    if (featureWithId.category === 'action') {
+      setActions(prev => [...prev, featureWithId]);
+    }
     setIsCreatingFeature(false);
   };
   const handleSaveCustomFeatureToDBAndAddToSelection = async (newFeatureData) => {
@@ -237,7 +316,9 @@ const CreatureCreatorPage = ({ currentUser }) => {
     setCreatureName('Creature'); setLevel(1); setPower('Normal');
     setType('humanoid'); setRole('none'); setSize('medium');
     setSelectedFeatures([]);
+    setActions(generateDefaultActionFeatures({ level: 1, power: 'normal', role: 'none', type: 'humanoid', size: 'medium', creatureName: 'Creature' }));
     setOverrides({}); // <<< CLEAR OVERRIDES
+    setActions([]);
     setIsCreatingFeature(false);
   };
 
@@ -253,13 +334,13 @@ const CreatureCreatorPage = ({ currentUser }) => {
       type,
       role,
       size,
+      actions,
       selectedFeatureIds: selectedFeatures.map(f => f.id),
       statModifiers: overrides, // Save the deltas/sets
       votes: 0,
       createdAt: serverTimestamp(),
       ownerId: currentUser.uid,
       submittedBy: currentUser.email,
-      votes: 0,
     };
     try {
       const docRef = await addDoc(collection(db, "savedCreatures"), creatureDataToSave);
@@ -273,6 +354,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
     if (statBlock) {
       const dataToExport = { // Export a cleaner version if desired
         inputs: { name: creatureName, level, power, type, role, size },
+        actions,
         selectedFeatureIds: selectedFeatures.map(f => f.id),
         statModifiers: overrides,
         generatedDisplay: statBlock.Display
@@ -325,6 +407,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
           fullStatBlock={statBlock} // This now contains CalculatedBeforeDeltas, FinalWithDeltas, Display
           onStatOverride={handleStatOverride} // Pass the handler
           onRemoveFeature={handleRemoveSelectedFeature} // Pass this for removing features from stat block
+          onActionUpdate={handleActionUpdate}
         />
         <RightBar
           onCreateNew={handleCreateNew}

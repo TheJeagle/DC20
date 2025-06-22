@@ -18,7 +18,10 @@ const MyCreaturesPage = ({ currentUser }) => {
                     where('ownerId', '==', currentUser.uid)
                 );
                 const snapshot = await getDocs(q);
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const data = snapshot.docs.map(doc => {
+                    const d = doc.data();
+                    return { id: doc.id, ...d, actions: d.actions || [] };
+                });
                 setAllCreatures(data);
             } catch (err) {
                 console.error('Error fetching creatures:', err);
