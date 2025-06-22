@@ -102,6 +102,12 @@
     border-bottom: 1px solid var(--border-light);
 }
 
+@media (max-width: 600px) {
+    .stats-main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .stats-block {
     /* Common for the two black boxes */
     background-color: var(--bg-dark-block);
