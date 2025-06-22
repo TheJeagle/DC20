@@ -1,4 +1,13 @@
 :root {
+  /* Typography */
+  --ff-heading: 'Cinzel', serif;
+  --ff-body: 'Inter', sans-serif;
+
+  /* Color Palette */
+  --color-bg: #2c3e50;
+  --color-text: #ffffff;
+  --color-accent: #3498db;
+
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
