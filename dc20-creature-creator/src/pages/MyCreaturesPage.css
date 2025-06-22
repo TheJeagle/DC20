@@ -1,0 +1,26 @@
+.my-creatures-container {
+    padding-top: 20px;
+}
+
+.filters {
+    margin-bottom: 10px;
+    display: flex;
+    gap: 5px;
+}
+
+.creature-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.creature-table th,
+.creature-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.creature-table th {
+    cursor: pointer;
+    background-color: #f2f2f2;
+}

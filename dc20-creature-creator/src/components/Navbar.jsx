@@ -24,6 +24,9 @@ const Navbar = ({ currentUser, onLogout }) => {
                 </button>
                 {currentUser ? (
                     <>
+                        <button onClick={() => navigate('/my-creatures')} className="navbar-button">
+                            My Creatures
+                        </button>
                         <button onClick={() => navigate('/account')} className="navbar-button account-button">
                             Account ({currentUser.email ? currentUser.email.split('@')[0] : 'User'})
                         </button>

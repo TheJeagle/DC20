@@ -257,6 +257,9 @@ const CreatureCreatorPage = ({ currentUser }) => {
       statModifiers: overrides, // Save the deltas/sets
       votes: 0,
       createdAt: serverTimestamp(),
+      ownerId: currentUser.uid,
+      submittedBy: currentUser.email,
+      votes: 0,
     };
     try {
       const docRef = await addDoc(collection(db, "savedCreatures"), creatureDataToSave);
