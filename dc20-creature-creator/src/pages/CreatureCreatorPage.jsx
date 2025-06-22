@@ -272,6 +272,24 @@ const CreatureCreatorPage = ({ currentUser }) => {
   };
   // --- END OF handleStatOverride DEFINITION ---
 
+  const handleActionUpdate = (actionIndex, field, value) => {
+    setSelectedFeatures(prev => {
+      const actionFeatures = prev.filter(f => f.category === 'action');
+      const target = actionFeatures[actionIndex];
+      if (!target) return prev;
+      const targetId = target.id;
+      return prev.map(f => {
+        if (f.id !== targetId) return f;
+        let newVal = value;
+        if (['costAP','costMP','costSP','damageMod','saveDCMod','rangeValue','areaSize'].includes(field)) {
+          const num = parseInt(value, 10);
+          newVal = isNaN(num) ? 0 : num;
+        }
+        return { ...f, [field]: newVal };
+      });
+    });
+  };
+
 
   // --- Custom Feature Creation Handlers ---
   const handleToggleFeatureCreationForm = () => setIsCreatingFeature(prev => !prev);
@@ -389,6 +407,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
           fullStatBlock={statBlock} // This now contains CalculatedBeforeDeltas, FinalWithDeltas, Display
           onStatOverride={handleStatOverride} // Pass the handler
           onRemoveFeature={handleRemoveSelectedFeature} // Pass this for removing features from stat block
+          onActionUpdate={handleActionUpdate}
         />
         <RightBar
           onCreateNew={handleCreateNew}
