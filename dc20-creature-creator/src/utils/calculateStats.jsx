@@ -381,3 +381,34 @@ export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverride
         }
     };
 };
+
+export const generateDefaultActionFeatures = (inputs) => {
+    const { FinalWithDeltas } = calculateCreatureStats(inputs, [], {});
+    const parseRange = (rangeStr) => {
+        if (!rangeStr) return { rangeValue: 0, rangeUnit: '' };
+        const match = rangeStr.match(/(\d+)\s*(\w+)/);
+        if (match) {
+            return { rangeValue: parseInt(match[1], 10), rangeUnit: match[2].replace(/s$/, '') };
+        }
+        return { rangeValue: 0, rangeUnit: rangeStr };
+    };
+    return (FinalWithDeltas.DefaultAttacks || []).map((att, idx) => {
+        const { rangeValue, rangeUnit } = parseRange(att.range);
+        return {
+            id: `default-${idx}`,
+            name: att.name,
+            category: 'action',
+            actionType: att.type ? `${att.type} Attack` : '',
+            costAP: att.costAP,
+            costMP: 0,
+            costSP: 0,
+            damageMod: 0,
+            damageType: att.damageType,
+            targetsDefense: att.targetsDefense,
+            rangeValue,
+            rangeUnit,
+            targetDescription: att.targetDescription,
+            descriptionCore: att.details
+        };
+    });
+};
