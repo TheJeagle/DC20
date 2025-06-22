@@ -1,11 +1,22 @@
 .my-creatures-container {
     padding-top: 20px;
+    font-family: var(--ff-body);
+    color: var(--color-text);
 }
 
 .filters {
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     display: flex;
-    gap: 5px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.filters input {
+    padding: 6px 10px;
+    border: 1px solid var(--border-light, #555);
+    border-radius: 4px;
+    background-color: var(--color-bg);
+    color: var(--color-text);
 }
 
 .creature-table {
@@ -15,12 +26,17 @@
 
 .creature-table th,
 .creature-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-light, #444);
     text-align: left;
 }
 
 .creature-table th {
     cursor: pointer;
-    background-color: #f2f2f2;
+    background-color: var(--color-accent);
+    color: var(--color-text);
+}
+
+.creature-table tbody tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.05);
 }
