@@ -8,7 +8,7 @@ import {
 
 const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
 
-export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverrideDeltas = {}) => {
+export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverrideDeltas = {}, actions = []) => {
     const { level, power, role, type, size, creatureName } = inputs;
 
     let calculated = {
@@ -356,10 +356,68 @@ export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverride
     const otherDisplayCombatActions = finalCalcs.CombatActions.filter(ca => !ca.actionType || !(ca.actionType.includes("Attack") || ca.actionType.includes("Spell")))
         .map(ca => ({ name: `${ca.name} (${ca.displayCost})`, details: ca.displayDescription, originalFeatureId: ca.originalFeatureId }));
 
+    const formattedActions = (actions || []).map(act => {
+        const { name, descriptionCore, description, costAP = 0, costMP = 0, actionType,
+            damageMod = 0, baseDamageOverride, damageType, targetsDefense, rangeValue = 0,
+            rangeUnit, areaShape, areaSize, targetDescription, saveAttribute, saveDCMod = 0,
+            conditionApplied, conditionDuration, healingAmount } = act;
+
+        let finalActionDamage = 0;
+        if (actionType && (actionType.includes('Attack') || actionType.includes('Spell'))) {
+            if (typeof baseDamageOverride === 'number') {
+                finalActionDamage = baseDamageOverride + (damageMod || 0);
+            } else {
+                finalActionDamage = (finalCalcs.Damage || 0) + (damageMod || 0);
+            }
+        }
+
+        let costParts = [];
+        if (costAP > 0) costParts.push(`${costAP} AP`);
+        if (costMP > 0) costParts.push(`${costMP} MP`);
+        const displayCostStr = costParts.join(' + ') || 'Free';
+
+        let descDisplayParts = [];
+        if (descriptionCore || description || name) descDisplayParts.push(descriptionCore || description || name);
+        if (finalActionDamage > 0) {
+            descDisplayParts.push(`${finalActionDamage} ${damageType || 'damage'} damage${targetsDefense ? ` vs ${targetsDefense}` : ''}.`);
+        }
+        const targetInfo = targetDescription || (areaShape ? (areaSize ? `${areaSize}-space ${areaShape}` : areaShape) : 'target');
+        let rangeInfo = '';
+        if (rangeValue > 0 && rangeUnit === 'space') {
+            rangeInfo = `${rangeValue} space(s)`;
+        } else if (rangeUnit) {
+            rangeInfo = rangeUnit.charAt(0).toUpperCase() + rangeUnit.slice(1);
+        }
+        if (targetInfo || rangeInfo) {
+            descDisplayParts.push(`Target ${targetInfo}${rangeInfo ? ` within ${rangeInfo}` : ''}.`);
+        }
+
+        if (saveAttribute) {
+            const actionSaveDC = finalCalcs.SaveDC + (saveDCMod || 0);
+            let saveStr = `Target makes a ${saveAttribute} save (DC ${actionSaveDC})`;
+            saveStr += conditionApplied ? ` or becomes ${conditionApplied}` : ` for effect`;
+            if (conditionApplied && conditionDuration) saveStr += ` (${conditionDuration.replace("your", "its")})`;
+            descDisplayParts.push(saveStr + '.');
+        } else if (conditionApplied) {
+            let condStr = `Applies ${conditionApplied}`;
+            if (conditionDuration) condStr += ` (${conditionDuration.replace("your", "its")})`;
+            descDisplayParts.push(condStr + '.');
+        }
+        if (healingAmount) {
+            descDisplayParts.push(healingAmount === 'damage dealt' ? 'You regain HP equal to damage dealt.' : `Heals for ${healingAmount} HP.`);
+        }
+
+        return {
+            name: `${name} (${displayCostStr})`,
+            details: descDisplayParts.filter(p => p && p.trim() !== '').join(' ')
+        };
+    });
+
     return {
         Name: finalCalcs.Name, Level: finalCalcs.Level, Power: finalCalcs.Power, Type: finalCalcs.Type, Role: finalCalcs.Role, Size: finalCalcs.Size,
         CalculatedBeforeDeltas: statsAfterFeatures,
         FinalWithDeltas: finalCalcs,
+        FormattedActions: formattedActions,
         Display: {
             HP: finalCalcs.HP, PD: formattedPD, AD: formattedAD,
             MIG: `${finalCalcs.Attributes.Mig}${finalCalcs.Saves.Mig !== null ? ` (${finalCalcs.Saves.Mig})` : ''}`,
