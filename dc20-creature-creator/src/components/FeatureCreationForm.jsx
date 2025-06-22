@@ -88,9 +88,9 @@ const FeatureCreationForm = ({ onCancel, onAddOnlyToCreature, onSaveAndAddToCrea
 
     const constructFeatureData = () => {
         let costStringParts = [];
-        const numAP = parseInt(costAP) || 0;
-        const numMP = parseInt(costMP) || 0;
-        const numSP = parseInt(costSP) || 0;
+        const numAP = parseInt(costAP, 10) || 0;
+        const numMP = parseInt(costMP, 10) || 0;
+        const numSP = parseInt(costSP, 10) || 0;
 
         if (numAP > 0) costStringParts.push(`${numAP} AP`);
         if (numMP > 0) costStringParts.push(`${numMP} MP`);
@@ -112,7 +112,7 @@ const FeatureCreationForm = ({ onCancel, onAddOnlyToCreature, onSaveAndAddToCrea
             costMP: numMP,
             costSP: numSP,
             actionType: category === 'action' ? actionType : null,
-            damageMod: (category === 'action' && (actionType.includes('Attack') || actionType.includes('Spell'))) ? (parseInt(damageMod) || 0) : null,
+            damageMod: (category === 'action' && (actionType.includes('Attack') || actionType.includes('Spell'))) ? (parseInt(damageMod, 10) || 0) : null,
             damageType: (category === 'action' && (actionType.includes('Attack') || actionType.includes('Spell'))) ? damageType.trim() : null,
             range: (category === 'action' || category === 'attack_enhancement' || (category === 'reaction' && actionType)) ? range.trim() : null,
             targets: (category === 'action' || category === 'attack_enhancement' || (category === 'reaction' && actionType)) ? targets.trim() : null,
