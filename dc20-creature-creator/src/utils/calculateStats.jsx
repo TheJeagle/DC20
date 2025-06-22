@@ -192,16 +192,20 @@ export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverride
                 let displayCostStr = costParts.join(' + ') || 'Free';
                 if (category === 'reaction' && !costParts.length) displayCostStr = 'Reaction';
 
-                let descDisplayParts = [descriptionCore || description || name || '']; // Use name as fallback for desc core
-                if (finalActionDamage > 0) descDisplayParts.push(`Deals ${finalActionDamage} ${damageType || 'damage'}${targetsDefense ? ` vs ${targetsDefense}` : ''}.`);
-                if (rangeValue > 0 && rangeUnit === "space") {
-                    let rangeDesc = `Range: ${rangeValue} space(s)`;
-                    if (areaShape && areaSize) rangeDesc += ` (${areaSize}-space ${areaShape})`; else if (areaShape) rangeDesc += ` (${areaShape})`;
-                    descDisplayParts.push(rangeDesc + ".");
-                } else if (rangeUnit && (rangeUnit.toLowerCase() === 'melee' || rangeUnit.toLowerCase() === 'touch')) {
-                    descDisplayParts.push(`Range: ${rangeUnit.charAt(0).toUpperCase() + rangeUnit.slice(1)}.`);
+                let descDisplayParts = [];
+                if (finalActionDamage > 0) {
+                    descDisplayParts.push(`${finalActionDamage} ${damageType || 'damage'} damage${targetsDefense ? ` vs ${targetsDefense}` : ''}.`);
                 }
-                if (targetDescription) descDisplayParts.push(`Targets: ${targetDescription}.`);
+                const targetInfo = targetDescription || (areaShape ? (areaSize ? `${areaSize}-space ${areaShape}` : areaShape) : 'target');
+                let rangeInfo = '';
+                if (rangeValue > 0 && rangeUnit === 'space') {
+                    rangeInfo = `${rangeValue} space(s)`;
+                } else if (rangeUnit) {
+                    rangeInfo = rangeUnit.charAt(0).toUpperCase() + rangeUnit.slice(1);
+                }
+                if (targetInfo || rangeInfo) {
+                    descDisplayParts.push(`Target ${targetInfo}${rangeInfo ? ` within ${rangeInfo}` : ''}.`);
+                }
 
                 if (saveAttribute) {
                     let saveStr = `Target makes a ${saveAttribute} save (DC ${calculated.SaveDC})`;
@@ -260,20 +264,19 @@ export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverride
     if (calculated.isMartial && calculated.isCaster) {
         meleeAttackName = "Melee Attack (Martial or Spell)";
         meleeAttackType = "Melee Hybrid";
-        meleeAttackDetails.push(`Deals ${currentFinalBaseDamage} damage (choose physical or magical type) vs ${meleeTargetsDefense}.`);
+        meleeAttackDetails.push(`${currentFinalBaseDamage} damage (choose physical or magical type) vs ${meleeTargetsDefense}.`);
     } else if (calculated.isMartial) {
         meleeAttackName = "Melee Martial Attack";
         meleeAttackType = "Melee Martial";
         meleeDamageType = "physical";
-        meleeAttackDetails.push(`Deals ${currentFinalBaseDamage} ${meleeDamageType} damage vs ${meleeTargetsDefense}.`);
+        meleeAttackDetails.push(`${currentFinalBaseDamage} ${meleeDamageType} damage vs ${meleeTargetsDefense}.`);
     } else if (calculated.isCaster) {
         meleeAttackName = "Melee Spell Attack";
         meleeAttackType = "Melee Spell";
         meleeDamageType = "magical"; // Or a default caster damage type
-        meleeAttackDetails.push(`Deals ${currentFinalBaseDamage} ${meleeDamageType} damage vs ${meleeTargetsDefense}.`);
+        meleeAttackDetails.push(`${currentFinalBaseDamage} ${meleeDamageType} damage vs ${meleeTargetsDefense}.`);
     } else { // Fallback
-        meleeAttackDetails.push(`You make a melee attack.`);
-        meleeAttackDetails.push(`Deals ${currentFinalBaseDamage} damage vs ${meleeTargetsDefense}.`);
+        meleeAttackDetails.push(`${currentFinalBaseDamage} damage vs ${meleeTargetsDefense}.`);
     }
     meleeAttackDetails.push("Target 1 creature within 1 space."); // Standard melee reach
 
@@ -303,19 +306,19 @@ export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverride
         if (calculated.isMartial && calculated.isCaster) {
             rangedAttackName = "Ranged Attack (Martial or Spell)";
             rangedAttackType = "Ranged Hybrid";
-            rangedAttackDetails.push(`Deals ${rangedCreatureDamage} damage (choose physical or magical type) vs ${rangedTargetsDefense}.`);
+            rangedAttackDetails.push(`${rangedCreatureDamage} damage (choose physical or magical type) vs ${rangedTargetsDefense}.`);
         } else if (calculated.isMartial) {
             rangedAttackName = "Ranged Martial Attack";
             rangedAttackType = "Ranged Martial";
             rangedDamageType = "physical";
-            rangedAttackDetails.push(`Deals ${rangedCreatureDamage} ${rangedDamageType} damage vs ${rangedTargetsDefense}.`);
+            rangedAttackDetails.push(`${rangedCreatureDamage} ${rangedDamageType} damage vs ${rangedTargetsDefense}.`);
         } else if (calculated.isCaster) {
             rangedAttackName = "Ranged Spell Attack";
             rangedAttackType = "Ranged Spell";
             rangedDamageType = "magical";
-            rangedAttackDetails.push(`Deals ${rangedCreatureDamage} ${rangedDamageType} damage vs ${rangedTargetsDefense}.`);
+            rangedAttackDetails.push(`${rangedCreatureDamage} ${rangedDamageType} damage vs ${rangedTargetsDefense}.`);
         } else {
-            rangedAttackDetails.push(`Deals ${rangedCreatureDamage} damage vs ${rangedTargetsDefense}.`);
+            rangedAttackDetails.push(`${rangedCreatureDamage} damage vs ${rangedTargetsDefense}.`);
         }
         rangedAttackDetails.push(`Target 1 creature within ${calculated.Range}.`); // Use the creature's defined range
 
