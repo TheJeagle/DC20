@@ -57,7 +57,7 @@
 .editable-select-span {
     cursor: text;
     padding: 2px 4px;
-    border: 1px solid var(--color-accent);
+    border-bottom: 1px solid var(--color-accent);
     border-radius: 3px;
     transition: background-color 0.2s ease-in-out;
     display: inline-block;
@@ -68,7 +68,8 @@
 }
 
 .editable-select {
-    border: 1px solid var(--color-accent);
+    border-bottom: 1px solid var(--color-accent);
     border-radius: 3px;
     background-color: #f8f9fa;
+    color: #333;
 }
