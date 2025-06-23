@@ -8,7 +8,13 @@ import {
 
 const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
 
-export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverrideDeltas = {}, actions = []) => {
+export const calculateCreatureStats = (
+    inputs,
+    selectedRawFeatures,
+    userOverrideDeltas = {},
+    defaultActionOverrides = {},
+    actions = []
+) => {
     const { level, power, role, type, size, creatureName } = inputs;
 
     let calculated = {
@@ -345,6 +351,14 @@ export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverride
         });
     }
 
+    // --- Apply overrides to default attacks ---
+    Object.entries(defaultActionOverrides || {}).forEach(([idx, ovr]) => {
+        const i = parseInt(idx, 10);
+        if (!isNaN(i) && calculated.DefaultAttacks[i]) {
+            calculated.DefaultAttacks[i] = { ...calculated.DefaultAttacks[i], ...ovr };
+        }
+    });
+
     // --- 8. Format for Display ---
     const finalCalcs = calculated;
     const formattedPD = `${finalCalcs.PD} (${finalCalcs.PD + 5}/${finalCalcs.PD + 10})`;
@@ -446,7 +460,7 @@ export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverride
 };
 
 export const generateDefaultActionFeatures = (inputs) => {
-    const { FinalWithDeltas } = calculateCreatureStats(inputs, [], {});
+    const { FinalWithDeltas } = calculateCreatureStats(inputs, [], {}, {});
     const parseRange = (rangeStr) => {
         if (!rangeStr) return { rangeValue: 0, rangeUnit: '' };
         const match = rangeStr.match(/(\d+)\s*(\w+)/);
