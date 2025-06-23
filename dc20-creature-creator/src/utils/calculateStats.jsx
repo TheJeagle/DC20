@@ -8,7 +8,13 @@ import {
 
 const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
 
-export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverrideDeltas = {}, actions = []) => {
+export const calculateCreatureStats = (
+    inputs,
+    selectedRawFeatures,
+    userOverrideDeltas = {},
+    defaultActionOverrides = {},
+    actions = []
+) => {
     const { level, power, role, type, size, creatureName } = inputs;
 
     let calculated = {
@@ -353,6 +359,14 @@ export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverride
         });
     }
 
+
+    // --- Apply overrides to default attacks ---
+    Object.entries(defaultActionOverrides || {}).forEach(([idx, ovr]) => {
+        const i = parseInt(idx, 10);
+        if (!isNaN(i) && calculated.DefaultAttacks[i]) {
+            calculated.DefaultAttacks[i] = { ...calculated.DefaultAttacks[i], ...ovr };
+
+  /* OLD WAY
     // Apply any pending overrides to generated default attacks
     attackOverrides.forEach(ov => {
         const att = calculated.DefaultAttacks[ov.index];
@@ -361,6 +375,7 @@ export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverride
             att[ov.field] = (att[ov.field] || 0) + ov.value;
         } else if (ov.type === 'set') {
             att[ov.field] = ov.value;
+    */
         }
     });
 
@@ -465,7 +480,7 @@ export const calculateCreatureStats = (inputs, selectedRawFeatures, userOverride
 };
 
 export const generateDefaultActionFeatures = (inputs) => {
-    const { FinalWithDeltas } = calculateCreatureStats(inputs, [], {});
+    const { FinalWithDeltas } = calculateCreatureStats(inputs, [], {}, {});
     const parseRange = (rangeStr) => {
         if (!rangeStr) return { rangeValue: 0, rangeUnit: '' };
         const match = rangeStr.match(/(\d+)\s*(\w+)/);

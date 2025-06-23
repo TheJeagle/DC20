@@ -10,7 +10,7 @@ import {
     GiMagicSwirl, GiCrossedSwords, GiUpgrade, GiReturnArrow, GiSandsOfTime
 } from 'react-icons/gi';
 
-const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature, onActionUpdate }) => {
+const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature, onActionUpdate, onDefaultActionUpdate }) => {
     if (!fullStatBlock || !fullStatBlock.Display || !fullStatBlock.CalculatedBeforeDeltas || !fullStatBlock.FinalWithDeltas) {
         return <div className="stat-block-panel"><p>Calculating stats...</p></div>;
     }
@@ -55,6 +55,12 @@ const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature, onActi
     const handleActionFieldSave = (actionIndex, field, value) => {
         if (onActionUpdate) {
             onActionUpdate(actionIndex, field, value);
+        }
+    };
+
+    const handleDefaultAttackFieldSave = (actionIndex, field, value) => {
+        if (onDefaultActionUpdate) {
+            onDefaultActionUpdate(actionIndex, field, value);
         }
     };
 
@@ -229,29 +235,8 @@ const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature, onActi
                                     ...finalRaw.DefaultAttacks[index],
                                     ...attack,
                                 }}
-                                onSaveField={(field, val) => handleSave(`Combat_Attacks_${index}_${field}_set`, val)}
+                                onSaveField={(field, val) => handleDefaultAttackFieldSave(index, field, val)}
                             />
-                    {/* OLD WAY
-                   
-                    {display.Combat.Attacks && display.Combat.Attacks.filter(a => !a.originalFeatureId).map((attack, index) => (
-                        <div key={`default-attack-${index}`} className="sb-list-item attack-item">
-                            <p>
-                                <EditableField
-                                    value={attack.name}
-                                    onSave={(f, val) => handleSave(`Combat_Attacks_${index}_name_set`, val)}
-                                    fieldName={`Combat_Attacks_${index}_name_set`}
-                                    fieldType="text"
-                                    className="editable-name-field"
-                                />:{' '}
-                                <EditableField
-                                    value={attack.details}
-                                    onSave={(f, val) => handleSave(`Combat_Attacks_${index}_details_set`, val)}
-                                    fieldName={`Combat_Attacks_${index}_details_set`}
-                                    fieldType="text"
-                                    className="editable-description-field"
-                                />
-                            </p>
-                        */}
                         </div>
                     ))}
 

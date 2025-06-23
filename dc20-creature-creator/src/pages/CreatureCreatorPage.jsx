@@ -29,6 +29,9 @@ const CreatureCreatorPage = ({ currentUser }) => {
   const [selectedFeatures, setSelectedFeatures] = useState([]);
   const [actions, setActions] = useState([]);
 
+  // --- State for Default Attack Overrides ---
+  const [defaultActionOverrides, setDefaultActionOverrides] = useState({});
+
   // --- State for Overrides (Deltas and Sets) ---
   const [overrides, setOverrides] = useState({});
 
@@ -103,10 +106,14 @@ const CreatureCreatorPage = ({ currentUser }) => {
   // --- Effect 4: Re-calculate statBlock (NOW PASSES OVERRIDES) ---
   useEffect(() => {
     const inputs = { level, power: power.toLowerCase(), role, type, size, creatureName };
-    const newCalculatedStats = calculateCreatureStats(inputs, selectedFeatures, overrides); // Pass overrides
+    const newCalculatedStats = calculateCreatureStats(
+      inputs,
+      selectedFeatures,
+      overrides,
+      defaultActionOverrides
+    );
     setStatBlock(newCalculatedStats);
-    // console.log("Stat block recalculated with overrides:", newCalculatedStats);
-  }, [creatureName, level, power, type, role, size, selectedFeatures, overrides]); // Added 'overrides'
+  }, [creatureName, level, power, type, role, size, selectedFeatures, overrides, defaultActionOverrides]);
 
   // --- Effect 5: Build actions array from selected features and default attacks ---
   useEffect(() => {
@@ -289,6 +296,18 @@ const CreatureCreatorPage = ({ currentUser }) => {
     });
   };
 
+  const handleDefaultActionUpdate = (actionIndex, field, value) => {
+    setDefaultActionOverrides(prev => {
+      const current = prev[actionIndex] || {};
+      let newVal = value;
+      if (['costAP', 'costMP', 'damage'].includes(field)) {
+        const num = parseInt(value, 10);
+        newVal = isNaN(num) ? 0 : num;
+      }
+      return { ...prev, [actionIndex]: { ...current, [field]: newVal } };
+    });
+  };
+
 
   // --- Custom Feature Creation Handlers ---
   const handleToggleFeatureCreationForm = () => setIsCreatingFeature(prev => !prev);
@@ -317,6 +336,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
     setSelectedFeatures([]);
     setActions(generateDefaultActionFeatures({ level: 1, power: 'normal', role: 'none', type: 'humanoid', size: 'medium', creatureName: 'Creature' }));
     setOverrides({}); // <<< CLEAR OVERRIDES
+    setDefaultActionOverrides({});
     setActions([]);
     setIsCreatingFeature(false);
   };
@@ -336,6 +356,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
       actions,
       selectedFeatureIds: selectedFeatures.map(f => f.id),
       statModifiers: overrides, // Save the deltas/sets
+      defaultActionOverrides,
       votes: 0,
       createdAt: serverTimestamp(),
       ownerId: currentUser.uid,
@@ -356,6 +377,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
         actions,
         selectedFeatureIds: selectedFeatures.map(f => f.id),
         statModifiers: overrides,
+        defaultActionOverrides,
         generatedDisplay: statBlock.Display
       };
       const jsonString = JSON.stringify(dataToExport, null, 2);
@@ -407,6 +429,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
           onStatOverride={handleStatOverride} // Pass the handler
           onRemoveFeature={handleRemoveSelectedFeature} // Pass this for removing features from stat block
           onActionUpdate={handleActionUpdate}
+          onDefaultActionUpdate={handleDefaultActionUpdate}
         />
         <RightBar
           onCreateNew={handleCreateNew}
