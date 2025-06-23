@@ -69,7 +69,7 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
                 className="editable-name-field"
             />{' '}
             (
-            {renderCost()}
+            <strong>{renderCost()}</strong>
             ):
             {' '}
             <EditableField
