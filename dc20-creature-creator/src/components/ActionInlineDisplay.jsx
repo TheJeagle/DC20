@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import EditableField from './EditableField';
 
 const ActionInlineDisplay = ({ action, onSaveField }) => {
+    const [isEditingDefense, setIsEditingDefense] = useState(false);
+
     if (!action) return null;
 
     const {
@@ -16,6 +18,7 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
         range,
         rangeValue,
         rangeUnit,
+        details = '',
     } = action;
 
     const finalDamage = typeof damage === 'number' ? damage : (typeof calculatedDamage === 'number' ? calculatedDamage : '');
@@ -85,14 +88,27 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
                 className="editable-description-field"
             />{' '}
             damage vs{' '}
-            <select
-                value={targetsDefense}
-                onChange={(e) => handleSave('targetsDefense', e.target.value)}
-                className="editable-description-field"
-            >
-                <option value="PD">PD</option>
-                <option value="AD">AD</option>
-            </select>
+            {isEditingDefense ? (
+                <select
+                    value={targetsDefense}
+                    onChange={(e) => {
+                        handleSave('targetsDefense', e.target.value);
+                        setIsEditingDefense(false);
+                    }}
+                    onBlur={() => setIsEditingDefense(false)}
+                    className="editable-select"
+                >
+                    <option value="PD">PD</option>
+                    <option value="AD">AD</option>
+                </select>
+            ) : (
+                <span
+                    onDoubleClick={() => setIsEditingDefense(true)}
+                    className="editable-select-span"
+                >
+                    {targetsDefense}
+                </span>
+            )}
             . Target{' '}
             <EditableField
                 value={targetDescription}
@@ -107,6 +123,17 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
                 fieldType="text"
                 className="editable-description-field"
             />.
+            {details && (
+                <>
+                    <br />
+                    <EditableField
+                        value={details}
+                        onSave={(f, val) => handleSave('details', val)}
+                        fieldType="text"
+                        className="editable-description-field"
+                    />
+                </>
+            )}
         </p>
     );
 };
