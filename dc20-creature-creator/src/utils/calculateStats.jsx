@@ -385,11 +385,23 @@ export const calculateCreatureStats = (
     const formattedAD = `${finalCalcs.AD} (${finalCalcs.AD + 5}/${finalCalcs.AD + 10})`;
     const skillsString = Object.entries(finalCalcs.Skills).map(([skill, bonus]) => `${skill.charAt(0).toUpperCase() + skill.slice(1)} ${bonus >= 0 ? '+' : ''}${bonus}`).join(', ') || 'None';
 
-    let displayAttacks = finalCalcs.DefaultAttacks.map(att => ({ name: `${att.name} (${att.costAP} AP)`, details: att.details, originalFeatureId: null })); // Default attacks don't have originalFeatureId from selectedFeatures
+    let displayAttacks = finalCalcs.DefaultAttacks.map(att => ({
+        name: att.name,
+        costAP: att.costAP,
+        costMP: att.costMP || 0,
+        details: att.details,
+        originalFeatureId: null,
+    })); // Default attacks don't have originalFeatureId from selectedFeatures
     const specificAttackActions = finalCalcs.CombatActions.filter(ca => ca.actionType && (ca.actionType.includes("Attack") || ca.actionType.includes("Spell")));
     specificAttackActions.forEach(ca => {
-        if (!displayAttacks.find(da => da.name.startsWith(ca.name))) {
-            displayAttacks.push({ name: `${ca.name} (${ca.displayCost})`, details: ca.displayDescription, originalFeatureId: ca.originalFeatureId });
+        if (!displayAttacks.find(da => da.name === ca.name)) {
+            displayAttacks.push({
+                name: ca.name,
+                costAP: ca.costAP || 0,
+                costMP: ca.costMP || 0,
+                details: ca.displayDescription,
+                originalFeatureId: ca.originalFeatureId,
+            });
         }
     });
     const otherDisplayCombatActions = finalCalcs.CombatActions.filter(ca => !ca.actionType || !(ca.actionType.includes("Attack") || ca.actionType.includes("Spell")))
