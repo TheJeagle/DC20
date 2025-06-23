@@ -31,32 +31,32 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
 
     const renderCost = () => {
         if (costAP === 0 && costMP === 0) return <span>Free</span>;
+
+        const parts = [];
+        if (costAP > 0) parts.push(`${costAP} AP`);
+        if (costMP > 0) parts.push(`${costMP} MP`);
+        const costString = parts.join(' + ');
+
+        const onCostSave = (field, val) => {
+            const apMatch = val.match(/(\d+)\s*AP/i);
+            const mpMatch = val.match(/(\d+)\s*MP/i);
+            const parsedAP = apMatch ? parseInt(apMatch[1], 10) : 0;
+            const parsedMP = mpMatch ? parseInt(mpMatch[1], 10) : 0;
+            if (onSaveField) {
+                onSaveField('costAP', parsedAP);
+                onSaveField('costMP', parsedMP);
+            }
+        };
+
         return (
-            <>
-                {costAP > 0 && (
-                    <>
-                        <EditableField
-                            value={costAP}
-                            onSave={(f, val) => handleSave('costAP', val)}
-                            fieldType="number"
-                            className="editable-number-field"
-                        />{' '}
-                        AP
-                    </>
-                )}
-                {costAP > 0 && costMP > 0 && ' + '}
-                {costMP > 0 && (
-                    <>
-                        <EditableField
-                            value={costMP}
-                            onSave={(f, val) => handleSave('costMP', val)}
-                            fieldType="number"
-                            className="editable-number-field"
-                        />{' '}
-                        MP
-                    </>
-                )}
-            </>
+            <strong>
+                <EditableField
+                    value={costString}
+                    onSave={onCostSave}
+                    fieldType="text"
+                    className="editable-number-field"
+                />
+            </strong>
         );
     };
 
