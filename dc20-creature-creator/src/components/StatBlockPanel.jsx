@@ -269,8 +269,21 @@ const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature, onActi
                     {display.Combat.AttackEnhancements.map((enh, index) => (
                         <div key={enh.originalFeatureId || `enhance-${index}`} className="sb-list-item enhancement-item">
                             <p>
-                                <EditableField value={enh.name} onSave={(f, val) => handleSave(`Combat_AttackEnhancements_${index}_name_set`, val)} fieldName={`Combat_AttackEnhancements_${index}_name_set`} fieldType="text" className="editable-name-field" />: {' '}
-                                <EditableField value={enh.details} onSave={(f, val) => handleSave(`Combat_AttackEnhancements_${index}_details_set`, val)} fieldName={`Combat_AttackEnhancements_${index}_details_set`} fieldType="text" className="editable-description-field" />
+                                <EditableField
+                                    value={enh.name}
+                                    onSave={(f, val) => handleSave(`Combat_AttackEnhancements_${index}_name_set`, val)}
+                                    fieldName={`Combat_AttackEnhancements_${index}_name_set`}
+                                    fieldType="text"
+                                    className="editable-name-field"
+                                />
+                                <br />
+                                <EditableField
+                                    value={enh.details}
+                                    onSave={(f, val) => handleSave(`Combat_AttackEnhancements_${index}_details_set`, val)}
+                                    fieldName={`Combat_AttackEnhancements_${index}_details_set`}
+                                    fieldType="text"
+                                    className="editable-description-field"
+                                />
                             </p>
                             {enh.originalFeatureId && <HoverRemoveButton onClick={() => onRemoveFeature(findOriginalItemForRemove(enh, "AttackEnhancements"))} />}
                         </div>
