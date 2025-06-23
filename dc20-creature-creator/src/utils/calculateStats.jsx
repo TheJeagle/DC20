@@ -252,14 +252,41 @@ export const calculateCreatureStats = (
                 break;
             }
             case 'attack_enhancement':
+
             {
                 let enhDescParts = [descriptionCore || description || name || ''];
+
                 if (saveAttribute) {
                     const enhSaveDC = (calculated.SaveDC || 0) + (saveDCMod || 0);
                     enhDescParts.push(`Target makes a ${saveAttribute} save (DC ${enhSaveDC})`);
                 }
-                if (conditionApplied) enhDescParts.push(conditionApplied ? `or becomes ${conditionApplied}${conditionDuration ? ` (${conditionDuration.replace("your", "its")})` : ''}` : '');
-                calculated.AttackEnhancements.push({ ...feature, name, cost: costAP > 0 ? `+${costAP} AP` : (costMP > 0 ? `+${costMP} MP` : 'Special'), description: enhDescParts.filter(Boolean).join('. '), originalFeatureId: id || originalFeatureId });
+                if (conditionApplied) {
+                    enhDescParts.push(
+                        conditionApplied
+                            ? `or becomes ${conditionApplied}${
+                                  conditionDuration
+                                      ? ` (${conditionDuration.replace("your", "its")})`
+                                      : ''
+                              }`
+                            : ''
+                    );
+                }
+                if (descriptionCore || description) {
+                    enhDescParts.push(descriptionCore || description);
+                }
+                if (!enhDescParts.length && name) enhDescParts.push(name);
+                calculated.AttackEnhancements.push({
+                    ...feature,
+                    name,
+                    cost:
+                        costAP > 0
+                            ? `+${costAP} AP`
+                            : costMP > 0
+                            ? `+${costMP} MP`
+                            : 'Special',
+                    description: enhDescParts.filter(Boolean).join('. '),
+                    originalFeatureId: id || originalFeatureId,
+                });
                 break;
             }
             case 'reaction':
