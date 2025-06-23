@@ -493,6 +493,12 @@
     margin: 0;
 }
 
+/* Bold text like action costs */
+.sb-list-item strong {
+    font-weight: 700;
+    color: var(--text-color-dark);
+}
+
 /* Names of features, actions, etc. */
 .sb-list-item .editable-name-field .editable-span,
 .sb-list-item .editable-name-field .editable-input {

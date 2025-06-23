@@ -125,9 +125,17 @@ export const calculateCreatureStats = (
 
 
     // --- Step 5.75: Apply User Override DELTAS (and SETS) ---
+    const attackOverrides = [];
     for (const fullOverrideKey in userOverrideDeltas) {
         if (userOverrideDeltas.hasOwnProperty(fullOverrideKey)) {
             const overrideStoredValue = userOverrideDeltas[fullOverrideKey];
+            const attackMatch = fullOverrideKey.match(/^Combat_Attacks_(\d+)_(.+)_(delta|set)$/);
+            if (attackMatch) {
+                const [, idxStr, field, type] = attackMatch;
+                attackOverrides.push({ index: parseInt(idxStr, 10), field, type, value: overrideStoredValue });
+                continue;
+            }
+
             const parts = fullOverrideKey.split('_'); const suffix = parts.pop(); const fieldKey = parts.join('_');
             const [mainKey, subKey] = fieldKey.split('_'); // Re-split fieldKey for nested access
             if (suffix === 'delta' && typeof overrideStoredValue === 'number') {
@@ -351,11 +359,23 @@ export const calculateCreatureStats = (
         });
     }
 
+
     // --- Apply overrides to default attacks ---
     Object.entries(defaultActionOverrides || {}).forEach(([idx, ovr]) => {
         const i = parseInt(idx, 10);
         if (!isNaN(i) && calculated.DefaultAttacks[i]) {
             calculated.DefaultAttacks[i] = { ...calculated.DefaultAttacks[i], ...ovr };
+
+  /* OLD WAY
+    // Apply any pending overrides to generated default attacks
+    attackOverrides.forEach(ov => {
+        const att = calculated.DefaultAttacks[ov.index];
+        if (!att) return;
+        if (ov.type === 'delta' && typeof ov.value === 'number' && typeof att[ov.field] === 'number') {
+            att[ov.field] = (att[ov.field] || 0) + ov.value;
+        } else if (ov.type === 'set') {
+            att[ov.field] = ov.value;
+    */
         }
     });
 
