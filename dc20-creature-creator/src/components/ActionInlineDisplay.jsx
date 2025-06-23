@@ -85,12 +85,14 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
                 className="editable-description-field"
             />{' '}
             damage vs{' '}
-            <EditableField
+            <select
                 value={targetsDefense}
-                onSave={(f, val) => handleSave('targetsDefense', val)}
-                fieldType="text"
+                onChange={(e) => handleSave('targetsDefense', e.target.value)}
                 className="editable-description-field"
-            />
+            >
+                <option value="PD">PD</option>
+                <option value="AD">AD</option>
+            </select>
             . Target{' '}
             <EditableField
                 value={targetDescription}
