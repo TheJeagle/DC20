@@ -61,7 +61,7 @@ const EditableField = ({
                 // finalValueToSave = 0;
                 // Option C: Don't save, keep editing (more complex UI)
                 // setIsEditing(true); return;
-                if (process.env.NODE_ENV !== 'production') {
+                if (import.meta.env.MODE !== 'production') {
                     console.warn(
                         `Invalid number input "${currentValue}" for ${fieldName}. Saving 0.`
                     );
@@ -71,7 +71,7 @@ const EditableField = ({
             }
 
         }
-        if (process.env.NODE_ENV !== 'production') {
+        if (import.meta.env.MODE !== 'production') {
             console.log(
                 "In Editablefield: Onsave:",
                 fieldName,
