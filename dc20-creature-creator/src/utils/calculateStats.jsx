@@ -76,7 +76,7 @@ export const calculateCreatureStats = (
     const attributeLevelScores = attributeScoresByLevel.find(a => a.level === level)?.scores || [0, 0, 0, 0];
     if (roleMods.AttributePriority) {
         roleMods.AttributePriority.forEach((attrName, index) => {
-            if (calculated.Attributes.hasOwnProperty(attrName)) {
+            if (Object.prototype.hasOwnProperty.call(calculated.Attributes, attrName)) {
                 calculated.Attributes[attrName] = attributeLevelScores[index];
             }
         });
@@ -108,10 +108,10 @@ export const calculateCreatureStats = (
         if (feature.category === 'feature' && Array.isArray(feature.effects)) {
             feature.effects.forEach(effect => {
                 const { stat, change, value } = effect;
-                if (calculated.hasOwnProperty(stat)) {
+                if (Object.prototype.hasOwnProperty.call(calculated, stat)) {
                     if (change === 'add' && typeof value === 'number') calculated[stat] = (calculated[stat] || 0) + value;
                     else if (change === 'set') calculated[stat] = value;
-                } else if (calculated.Attributes.hasOwnProperty(stat)) {
+                } else if (Object.prototype.hasOwnProperty.call(calculated.Attributes, stat)) {
                     if (change === 'add' && typeof value === 'number') calculated.Attributes[stat] = (calculated.Attributes[stat] || 0) + value;
                 } else if (stat === 'PDR' && change === 'set') calculated.PDR = value;
                 else if (stat === 'MaxMP' && change === 'add' && typeof value === 'number') calculated.MaxMP = (calculated.MaxMP || 0) + value;
@@ -127,7 +127,7 @@ export const calculateCreatureStats = (
     // --- Step 5.75: Apply User Override DELTAS (and SETS) ---
     const attackOverrides = [];
     for (const fullOverrideKey in userOverrideDeltas) {
-        if (userOverrideDeltas.hasOwnProperty(fullOverrideKey)) {
+        if (Object.prototype.hasOwnProperty.call(userOverrideDeltas, fullOverrideKey)) {
             const overrideStoredValue = userOverrideDeltas[fullOverrideKey];
             const attackMatch = fullOverrideKey.match(/^Combat_Attacks_(\d+)_(.+)_(delta|set)$/);
             if (attackMatch) {
@@ -141,15 +141,15 @@ export const calculateCreatureStats = (
             if (suffix === 'delta' && typeof overrideStoredValue === 'number') {
                 if (subKey && calculated[mainKey] && typeof calculated[mainKey][subKey] === 'number') {
                     calculated[mainKey][subKey] = (calculated[mainKey][subKey] || 0) + overrideStoredValue;
-                } else if (calculated.hasOwnProperty(mainKey) && typeof calculated[mainKey] === 'number') {
+                } else if (Object.prototype.hasOwnProperty.call(calculated, mainKey) && typeof calculated[mainKey] === 'number') {
                     calculated[mainKey] = (calculated[mainKey] || 0) + overrideStoredValue;
                 }
             } else if (suffix === 'set') {
                 // For nested _set like Attributes_Mig_set, fieldKey is Attributes_Mig, mainKey=Attributes, subKey=Mig
                 // For simple _set like Name_set, fieldKey is Name, mainKey=Name, subKey=undefined
-                if (subKey && calculated.hasOwnProperty(mainKey) && typeof calculated[mainKey] === 'object' && calculated[mainKey] !== null) {
+                if (subKey && Object.prototype.hasOwnProperty.call(calculated, mainKey) && typeof calculated[mainKey] === 'object' && calculated[mainKey] !== null) {
                     calculated[mainKey][subKey] = overrideStoredValue;
-                } else if (calculated.hasOwnProperty(fieldKey)) { // Use fieldKey for top-level like Name_set
+                } else if (Object.prototype.hasOwnProperty.call(calculated, fieldKey)) { // Use fieldKey for top-level like Name_set
                     calculated[fieldKey] = overrideStoredValue;
                 } else {
                     console.warn(`Cannot apply _set override for unhandled field structure: ${fullOverrideKey}`);
@@ -165,7 +165,7 @@ export const calculateCreatureStats = (
     calculated.Saves = { Mig: null, Agi: null, Cha: null, Int: null };
     if (roleMods.SavesProficient) {
         roleMods.SavesProficient.forEach(proficientAttrName => {
-            if (calculated.Attributes.hasOwnProperty(proficientAttrName)) {
+            if (Object.prototype.hasOwnProperty.call(calculated.Attributes, proficientAttrName)) {
                 calculated.Saves[proficientAttrName] = (calculated.Attributes[proficientAttrName] || 0) + CM_final;
             }
         });
@@ -179,7 +179,7 @@ export const calculateCreatureStats = (
     calculated.CombatActions = []; calculated.AttackEnhancements = []; calculated.Reactions = [];
 
     selectedRawFeatures.forEach(feature => {
-        const { id, name, category, tags, originalFeatureId,
+        const { id, name, category, originalFeatureId,
             descriptionCore, costAP = 0, costMP = 0, // costSP = 0,
             actionType, damageMod = 0, damageType, targetsDefense,
             rangeValue = 0, rangeUnit, areaShape, areaSize, targetDescription,
@@ -190,7 +190,7 @@ export const calculateCreatureStats = (
             case 'feature':
                 calculated.Features.push({ name, description: descriptionCore || description, originalFeatureId: id || originalFeatureId });
                 break;
-            case 'action':
+            case 'action': {
                 let finalActionDamage = 0;
                 if (actionType && (actionType.includes("Attack") || actionType.includes("Spell"))) {
                     if (typeof feature.baseDamageOverride === 'number') {
@@ -250,8 +250,12 @@ export const calculateCreatureStats = (
                     originalFeatureId: id || originalFeatureId
                 });
                 break;
+            }
             case 'attack_enhancement':
-                let enhDescParts = [];
+
+            {
+                let enhDescParts = [descriptionCore || description || name || ''];
+
                 if (saveAttribute) {
                     const enhSaveDC = (calculated.SaveDC || 0) + (saveDCMod || 0);
                     enhDescParts.push(`Target makes a ${saveAttribute} save (DC ${enhSaveDC})`);
@@ -284,6 +288,7 @@ export const calculateCreatureStats = (
                     originalFeatureId: id || originalFeatureId,
                 });
                 break;
+            }
             case 'reaction':
                 calculated.Reactions.push({ ...feature, name, cost: costAP > 0 ? `${costAP} AP` : 'Reaction', description: descriptionCore || description, originalFeatureId: id || originalFeatureId });
                 break;

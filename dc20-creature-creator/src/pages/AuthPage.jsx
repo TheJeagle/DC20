@@ -72,9 +72,7 @@ const AuthPage = () => {
         setConfirmPassword('');
     };
 
-    // Define image sources (replace with your actual image paths or URLs)
-    const leftImage = isLoginView ? "/path/to/your/login-image-left.jpg" : "/path/to/your/register-image-right.jpg";
-    const rightImage = isLoginView ? "/path/to/your/login-image-right.jpg" : "/path/to/your/register-image-left.jpg";
+
 
 
     return (

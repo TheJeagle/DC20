@@ -44,7 +44,7 @@ const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature, onActi
             if (tempOriginalValue === null || typeof tempOriginalValue === 'undefined') { originalCalcValue = undefined; break; }
             if (Array.isArray(tempOriginalValue) && !isNaN(parseInt(part, 10))) {
                 tempOriginalValue = tempOriginalValue[parseInt(part, 10)];
-            } else if (typeof tempOriginalValue === 'object' && tempOriginalValue.hasOwnProperty(part)) {
+            } else if (typeof tempOriginalValue === 'object' && Object.prototype.hasOwnProperty.call(tempOriginalValue, part)) {
                 tempOriginalValue = tempOriginalValue[part];
             } else { originalCalcValue = undefined; break; }
             if (i === pathParts.length - 1) originalCalcValue = tempOriginalValue;

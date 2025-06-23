@@ -7,7 +7,6 @@ import StatBlockPanel from '../components/StatBlockPanel';
 
 import { calculateCreatureStats, generateDefaultActionFeatures } from '../utils/calculateStats';
 
-import { creatureActionSchema } from '../data/actionSchema';
 
 import { db } from '../firebase';
 import { collection, query, getDocs, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -207,7 +206,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
 
       if (Array.isArray(currentLevel) && !isNaN(parseInt(part, 10))) { // Part is an array index
         currentLevel = currentLevel[parseInt(part, 10)];
-      } else if (typeof currentLevel === 'object' && currentLevel.hasOwnProperty(part)) { // Part is an object key
+      } else if (typeof currentLevel === 'object' && Object.prototype.hasOwnProperty.call(currentLevel, part)) { // Part is an object key
         currentLevel = currentLevel[part];
       } else { // Part not found or path is invalid
         originalValueForDeltaCalc = undefined;
@@ -228,7 +227,6 @@ const CreatureCreatorPage = ({ currentUser }) => {
     // Determine if the override should be a delta or a set
     // If original or new value is a string, or if original is not a number (e.g. null for an optional numeric field), treat as a set.
     const originalIsNumeric = typeof originalValueForDeltaCalc === 'number' && !isNaN(originalValueForDeltaCalc);
-    const newIsNumericString = typeof newAbsoluteValueFromInput === 'string' && !isNaN(parseInt(newAbsoluteValueFromInput, 10));
     const newIsActualNumber = typeof newAbsoluteValueFromInput === 'number' && !isNaN(newAbsoluteValueFromInput);
 
     // Try to parse new input if it looks like a number but is a string

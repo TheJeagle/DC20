@@ -146,7 +146,6 @@ const FeatureCreationForm = ({ onCancel, onAddOnlyToCreature, onSaveAndAddToCrea
     const isAction = category === 'action';
     const isAttackEnhancement = category === 'attack_enhancement';
     const isReaction = category === 'reaction';
-    const isPassiveFeature = category === 'feature';
 
     const showCostFields = isAction || isAttackEnhancement || isReaction;
     const showActionTypeField = isAction;
