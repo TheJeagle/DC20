@@ -215,7 +215,7 @@ export const calculateCreatureStats = (
                     descDisplayParts.push(`${finalActionDamage} ${damageType || 'damage'} damage${targetsDefense ? ` vs ${targetsDefense}` : ''}.`);
                 }
                 let targetInfo = targetDescription || (areaShape ? (areaSize ? `${areaSize}-space ${areaShape}` : areaShape) : 'target');
-            
+
                 let rangeInfo = '';
                 if (rangeValue > 0 && rangeUnit === 'space') {
                     rangeInfo = `${rangeValue} space(s)`;
@@ -307,7 +307,7 @@ export const calculateCreatureStats = (
     calculated.DefaultAttacks.push({
         name: meleeAttackName,
         costAP: defaultAPCostMelee,
-        details: meleeAttackDetails.join(' '), // Join parts into a readable sentence
+        details: "", // OLD: meleeAttackDetails.join(' '), // Join parts into a readable sentence
         type: meleeAttackType,
         damage: currentFinalBaseDamage,
         damageType: meleeDamageType,
@@ -349,7 +349,7 @@ export const calculateCreatureStats = (
         calculated.DefaultAttacks.push({
             name: rangedAttackName,
             costAP: defaultAPCostRanged,
-            details: rangedAttackDetails.join(' '),
+            details: "", //OLD: rangedAttackDetails.join(' ') Was removed due to not being needed
             type: rangedAttackType,
             damage: rangedCreatureDamage,
             damageType: rangedDamageType,
@@ -366,16 +366,16 @@ export const calculateCreatureStats = (
         if (!isNaN(i) && calculated.DefaultAttacks[i]) {
             calculated.DefaultAttacks[i] = { ...calculated.DefaultAttacks[i], ...ovr };
 
-  /* OLD WAY
-    // Apply any pending overrides to generated default attacks
-    attackOverrides.forEach(ov => {
-        const att = calculated.DefaultAttacks[ov.index];
-        if (!att) return;
-        if (ov.type === 'delta' && typeof ov.value === 'number' && typeof att[ov.field] === 'number') {
-            att[ov.field] = (att[ov.field] || 0) + ov.value;
-        } else if (ov.type === 'set') {
-            att[ov.field] = ov.value;
-    */
+            /* OLD WAY
+              // Apply any pending overrides to generated default attacks
+              attackOverrides.forEach(ov => {
+                  const att = calculated.DefaultAttacks[ov.index];
+                  if (!att) return;
+                  if (ov.type === 'delta' && typeof ov.value === 'number' && typeof att[ov.field] === 'number') {
+                      att[ov.field] = (att[ov.field] || 0) + ov.value;
+                  } else if (ov.type === 'set') {
+                      att[ov.field] = ov.value;
+              */
         }
     });
 
