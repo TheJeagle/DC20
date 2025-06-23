@@ -66,4 +66,28 @@ describe('calculateCreatureStats', () => {
     expect(displayAttack.details).toContain('DC 16');
 
   });
+
+  it('applies overrides to default attacks', () => {
+    const inputs = {
+      level: 1,
+      power: 'normal',
+      role: 'none',
+      type: 'beast',
+      size: 'medium',
+      creatureName: 'Override Test'
+    };
+
+    const overrides = {
+      'Combat_Attacks_0_damage_set': 8,
+      'Combat_Attacks_0_name_set': 'Custom Attack',
+      'Combat_Attacks_0_details_set': '8 physical damage vs PD. Target 1 creature within 1 space.'
+    };
+
+    const result = calculateCreatureStats(inputs, [], overrides);
+
+    expect(result.FinalWithDeltas.DefaultAttacks[0].damage).toBe(8);
+    const displayAttack = result.Display.Combat.Attacks[0];
+    expect(displayAttack.name).toBe('Custom Attack (1 AP)');
+    expect(displayAttack.details).toContain('8 physical damage');
+  });
 });
