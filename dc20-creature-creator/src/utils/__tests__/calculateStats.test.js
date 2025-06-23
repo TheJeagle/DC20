@@ -77,17 +77,19 @@ describe('calculateCreatureStats', () => {
       creatureName: 'Override Test'
     };
 
-    const overrides = {
-      'Combat_Attacks_0_damage_set': 8,
-      'Combat_Attacks_0_name_set': 'Custom Attack',
-      'Combat_Attacks_0_details_set': '8 physical damage vs PD. Target 1 creature within 1 space.'
+    const actionOverrides = {
+      0: {
+        damage: 8,
+        name: 'Custom Attack',
+        details: '8 physical damage vs PD. Target 1 creature within 1 space.'
+      }
     };
 
-    const result = calculateCreatureStats(inputs, [], overrides);
+    const result = calculateCreatureStats(inputs, [], {}, actionOverrides);
 
     expect(result.FinalWithDeltas.DefaultAttacks[0].damage).toBe(8);
     const displayAttack = result.Display.Combat.Attacks[0];
-    expect(displayAttack.name).toBe('Custom Attack (1 AP)');
+    expect(displayAttack.name).toBe('Custom Attack');
     expect(displayAttack.details).toContain('8 physical damage');
   });
 });

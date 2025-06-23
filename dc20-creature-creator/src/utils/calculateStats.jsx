@@ -208,9 +208,6 @@ export const calculateCreatureStats = (
 
                 let descDisplayParts = [];
 
-                if (descriptionCore || description || name) {
-                    descDisplayParts.push(descriptionCore || description || name);
-                }
                 if (finalActionDamage > 0) {
                     descDisplayParts.push(`${finalActionDamage} ${damageType || 'damage'} damage${targetsDefense ? ` vs ${targetsDefense}` : ''}.`);
                 }
@@ -238,6 +235,12 @@ export const calculateCreatureStats = (
                     descDisplayParts.push(condStr + ".");
                 }
                 if (healingAmount) descDisplayParts.push(healingAmount === "damage dealt" ? "You regain HP equal to damage dealt." : `Heals for ${healingAmount} HP.`);
+
+                if (descriptionCore || description) {
+                    descDisplayParts.push(descriptionCore || description);
+                } else if (!descDisplayParts.length && name) {
+                    descDisplayParts.push(name);
+                }
 
                 calculated.CombatActions.push({
                     ...feature, name, calculatedDamage: finalActionDamage,
@@ -428,7 +431,6 @@ export const calculateCreatureStats = (
         const displayCostStr = costParts.join(' + ') || 'Free';
 
         let descDisplayParts = [];
-        if (descriptionCore || description || name) descDisplayParts.push(descriptionCore || description || name);
         if (finalActionDamage > 0) {
             descDisplayParts.push(`${finalActionDamage} ${damageType || 'damage'} damage${targetsDefense ? ` vs ${targetsDefense}` : ''}.`);
         }
@@ -456,6 +458,12 @@ export const calculateCreatureStats = (
         }
         if (healingAmount) {
             descDisplayParts.push(healingAmount === 'damage dealt' ? 'You regain HP equal to damage dealt.' : `Heals for ${healingAmount} HP.`);
+        }
+
+        if (descriptionCore || description) {
+            descDisplayParts.push(descriptionCore || description);
+        } else if (!descDisplayParts.length && name) {
+            descDisplayParts.push(name);
         }
 
         return {
