@@ -254,7 +254,12 @@ export const calculateCreatureStats = (
             case 'attack_enhancement':
 
             {
-                let enhDescParts = [descriptionCore || description || name || ''];
+                let enhDescParts = [];
+                if (descriptionCore || description) {
+                    enhDescParts.push(descriptionCore || description);
+                } else if (name) {
+                    enhDescParts.push(name);
+                }
 
                 if (saveAttribute) {
                     const enhSaveDC = (calculated.SaveDC || 0) + (saveDCMod || 0);
@@ -271,9 +276,7 @@ export const calculateCreatureStats = (
                             : ''
                     );
                 }
-                if (descriptionCore || description) {
-                    enhDescParts.push(descriptionCore || description);
-                }
+                // description already added above
                 if (!enhDescParts.length && name) enhDescParts.push(name);
                 calculated.AttackEnhancements.push({
                     ...feature,

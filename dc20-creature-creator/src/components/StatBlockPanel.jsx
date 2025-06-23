@@ -243,7 +243,7 @@ const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature, onActi
                     {finalRaw.CombatActions && finalRaw.CombatActions.filter(a => a.actionType && (a.actionType.includes('Attack') || a.actionType.includes('Spell'))).map((act, idx) => (
                         <div key={act.originalFeatureId || `attack-${idx}`} className="sb-list-item attack-item">
                             <ActionInlineDisplay
-                                action={act}
+                                action={{ ...act, details: act.details || act.displayDescription }}
                                 onSaveField={(field, val) => handleActionFieldSave(idx, field, val)}
                             />
                             {act.originalFeatureId && <HoverRemoveButton onClick={() => onRemoveFeature(act)} />}
@@ -253,7 +253,7 @@ const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature, onActi
                     {finalRaw.CombatActions && finalRaw.CombatActions.filter(a => !a.actionType || !(a.actionType.includes('Attack') || a.actionType.includes('Spell'))).map((act, idx) => (
                         <div key={act.originalFeatureId || `action-${idx}`} className="sb-list-item action-item">
                             <ActionInlineDisplay
-                                action={act}
+                                action={{ ...act, details: act.details || act.displayDescription }}
                                 onSaveField={(field, val) => handleActionFieldSave(idx, field, val)}
                             />
                             {act.originalFeatureId && <HoverRemoveButton onClick={() => onRemoveFeature(act)} />}
