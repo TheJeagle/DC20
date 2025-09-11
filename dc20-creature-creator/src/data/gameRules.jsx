@@ -3,29 +3,28 @@
 // Corresponds to your creatureLevelStats
 export const baseLevelStatsData = [
     // lvl 0
-    { level: 0, HP: 8, PD: 11, AD: 8, Check: 3, Damage: 1, AP: 4, Speed: 5, MaxMP: 0 },
+    { level: 0, HP: 8, PD: 11, AD: 11, Check: 3, Damage: 1, AP: 4, Speed: 5, MaxMP: 0 },
     // lvl 1
-    { level: 1, HP: 10, PD: 12, AD: 9, Check: 4, Damage: 2, AP: 4, Speed: 5, MaxMP: 0 },
+    { level: 1, HP: 10, PD: 12, AD: 12, Check: 4, Damage: 1.5, AP: 4, Speed: 5, MaxMP: 0 },
     // lvl 2
-    { level: 2, HP: 12, PD: 12, AD: 9, Check: 4, Damage: 2, AP: 4, Speed: 5, MaxMP: 0 },
+    { level: 2, HP: 13, PD: 12, AD: 12, Check: 4, Damage: 2, AP: 4, Speed: 5, MaxMP: 0 },
     // lvl 3
-    { level: 3, HP: 14, PD: 13, AD: 10, Check: 5, Damage: 3, AP: 4, Speed: 5, MaxMP: 0 },
+    { level: 3, HP: 15, PD: 13, AD: 13, Check: 5, Damage: 3, AP: 4, Speed: 5, MaxMP: 0 },
     // lvl 4
-    { level: 4, HP: 16, PD: 13, AD: 10, Check: 5, Damage: 3, AP: 4, Speed: 5, MaxMP: 0 },
+    { level: 4, HP: 18, PD: 13, AD: 13, Check: 5, Damage: 3.5, AP: 4, Speed: 5, MaxMP: 0 },
     // lvl 5
-    { level: 5, HP: 18, PD: 15, AD: 12, Check: 7, Damage: 4, AP: 4, Speed: 5, MaxMP: 0 },
+    { level: 5, HP: 21, PD: 15, AD: 15, Check: 7, Damage: 4.5, AP: 4, Speed: 5, MaxMP: 0 },
     // lvl 6
-    { level: 6, HP: 20, PD: 15, AD: 12, Check: 7, Damage: 4, AP: 4, Speed: 5, MaxMP: 0 },
+    { level: 6, HP: 24, PD: 15, AD: 15, Check: 7, Damage: 5, AP: 4, Speed: 5, MaxMP: 0 },
     // lvl 7
-    { level: 7, HP: 22, PD: 16, AD: 13, Check: 8, Damage: 5, AP: 4, Speed: 5, MaxMP: 0 },
+    { level: 7, HP: 26, PD: 16, AD: 16, Check: 8, Damage: 5.5, AP: 4, Speed: 5, MaxMP: 0 },
     // lvl 8
-    { level: 8, HP: 24, PD: 16, AD: 13, Check: 8, Damage: 5, AP: 4, Speed: 5, MaxMP: 0 },
+    { level: 8, HP: 29, PD: 16, AD: 16, Check: 8, Damage: 6, AP: 4, Speed: 5, MaxMP: 0 },
     // lvl 9
-    { level: 9, HP: 26, PD: 17, AD: 14, Check: 9, Damage: 6, AP: 4, Speed: 5, MaxMP: 0 },
+    { level: 9, HP: 32, PD: 17, AD: 17, Check: 9, Damage: 6.5, AP: 4, Speed: 5, MaxMP: 0 },
     // lvl 10
-    { level: 10, HP: 28, PD: 17, AD: 14, Check: 9, Damage: 6, AP: 4, Speed: 5, MaxMP: 0 }
+    { level: 10, HP: 35, PD: 18, AD: 18, Check: 10, Damage: 7, AP: 4, Speed: 5, MaxMP: 0 }
 ];
-
 // Corresponds to your statsPerLevel (for MIG, AGI, CHA, INT in order)
 export const attributeScoresByLevel = [
     { level: 0, scores: [3, 1, 1, -2] }, // [Prime, Secondary, Tertiary, Quaternary]
