@@ -20,7 +20,7 @@ describe('calculateCreatureStats', () => {
     expect(final.PD).toBe(12);
     expect(final.AD).toBe(12);
     expect(final.Check).toBe(4);
-    expect(final.Damage).toBeCloseTo(1.5);
+    expect(final.Damage).toBe(2);
     expect(final.AP).toBe(4);
     expect(final.Speed).toBe(5);
     expect(final.MaxMP).toBe(0);
@@ -62,7 +62,7 @@ describe('calculateCreatureStats', () => {
     const result = calculateCreatureStats(inputs, [action], {});
     const displayAttack = result.Display.Combat.Attacks.find(a => a.name.startsWith('Fiery Strike'));
     expect(displayAttack).toBeDefined();
-    expect(displayAttack.details).toContain('3.5 fire damage vs PD.');
+    expect(displayAttack.details).toContain('4 fire damage vs PD.');
     expect(displayAttack.details).toContain('DC 16');
 
   });

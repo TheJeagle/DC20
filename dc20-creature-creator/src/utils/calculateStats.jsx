@@ -172,6 +172,9 @@ export const calculateCreatureStats = (
     }
     if (roleMods.AttributePriority) calculated.Attributes.Prime = calculated.Attributes[roleMods.AttributePriority[0]] || 0;
 
+    // Round up final damage after all base modifications and user overrides
+    calculated.Damage = Math.ceil(calculated.Damage);
+
 
     // --- Recalculate Dependent Values (Saves, SaveDC) AFTER all modifications ---
     const CM_final = Math.ceil(calculated.Level / 2);
@@ -211,6 +214,7 @@ export const calculateCreatureStats = (
                     } else {
                         finalActionDamage = (calculated.Damage || 0) + damageMod;
                     }
+                    finalActionDamage = Math.ceil(finalActionDamage);
                 }
 
                 let costParts = [];
@@ -272,6 +276,7 @@ export const calculateCreatureStats = (
                     } else {
                         finalActionDamage = (calculated.Damage || 0) + damageMod;
                     }
+                    finalActionDamage = Math.ceil(finalActionDamage);
                 }
 
                 let costParts = [];
@@ -530,6 +535,7 @@ export const calculateCreatureStats = (
             } else {
                 finalActionDamage = (finalCalcs.Damage || 0) + (damageMod || 0);
             }
+            finalActionDamage = Math.ceil(finalActionDamage);
         }
 
         let costParts = [];
