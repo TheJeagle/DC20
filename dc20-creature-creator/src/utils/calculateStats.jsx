@@ -64,6 +64,7 @@ export const calculateCreatureStats = (
         calculated.PD += powerScale.Defense || 0;
         calculated.AD += powerScale.Defense || 0;
         calculated.Check += powerScale.Check || 0;
+        calculated.SaveDC += powerScale.SaveDC || 0;
         calculated.Damage += powerScale.Damage || 0;
         calculated.AP += powerScale.AP || 0;
         // Apply power scaling to MaxMP (Role MP * Power Factor)
