@@ -25,6 +25,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
   const [isLoadingAllFeatures, setIsLoadingAllFeatures] = useState(true);
   const [availableTypeFeatures, setAvailableTypeFeatures] = useState([]);
   const [availableRoleFeatures, setAvailableRoleFeatures] = useState([]);
+  const [availableApexActions, setAvailableApexActions] = useState([]);
   const [selectedFeatures, setSelectedFeatures] = useState([]);
   const [actions, setActions] = useState([]);
 
@@ -60,6 +61,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
           ...doc.data()
         }));
         setAllFeatures(featuresData);
+        setAvailableApexActions(featuresData.filter(f => f.category === 'apex_action'));
         // console.log(`Fetched ${featuresData.length} total features.`);
       } catch (error) {
         console.error("Error fetching all features:", error);
@@ -413,6 +415,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
           allFeatures={allFeatures}
           availableTypeFeatures={availableTypeFeatures}
           availableRoleFeatures={availableRoleFeatures}
+          availableApexActions={availableApexActions}
           selectedFeatures={selectedFeatures}
           onFeatureSelect={handleFeatureSelect}
           onRemoveSelectedFeature={handleRemoveSelectedFeature}

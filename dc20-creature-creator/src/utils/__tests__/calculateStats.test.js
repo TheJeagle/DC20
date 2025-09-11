@@ -92,4 +92,34 @@ describe('calculateCreatureStats', () => {
     expect(displayAttack.name).toBe('Custom Attack');
     expect(displayAttack.details).toContain('8 physical damage');
   });
+
+  it('assigns LAP and formats apex actions', () => {
+    const inputs = {
+      level: 1,
+      power: 'apex',
+      role: 'none',
+      type: 'beast',
+      size: 'medium',
+      creatureName: 'Apex Test'
+    };
+
+    const apexAction = {
+      id: 'apex_test_action',
+      name: 'Tail Sweep',
+      category: 'apex_action',
+      costAP: 1,
+      descriptionCore: 'Swipe your tail at a foe.',
+      actionType: 'Melee Attack',
+      rangeValue: 1,
+      rangeUnit: 'space',
+      targetDescription: '1 creature'
+    };
+
+    const result = calculateCreatureStats(inputs, [apexAction], {});
+    expect(result.FinalWithDeltas.LAP).toBe(3);
+    expect(result.Display.Combat.LAP).toBe('3');
+    const aa = result.Display.ApexActions.find(a => a.name.startsWith('Tail Sweep'));
+    expect(aa).toBeDefined();
+    expect(aa.details).toContain('Swipe your tail');
+  });
 });

@@ -13,6 +13,7 @@ const InputPanel = ({
     allFeatures,             // <<< NEW: All features from App.jsx
     availableTypeFeatures,   // Pre-filtered by App.jsx
     availableRoleFeatures,   // Pre-filtered by App.jsx
+    availableApexActions,
     selectedFeatures,
     onFeatureSelect,
     onRemoveSelectedFeature,
@@ -184,7 +185,7 @@ const InputPanel = ({
                         </div>
                     ) : (
                         // Otherwise (no active search term), show the type and role filtered lists
-                        <>
+                        <> 
                             <div className="available-features-group">
                                 <h3>Available by Type ({type})</h3>
                                 <div className="feature-list-container">
@@ -195,6 +196,12 @@ const InputPanel = ({
                                 <h3>Available by Role ({role})</h3>
                                 <div className="feature-list-container">
                                     {renderFeatureItems(availableRoleFeatures, 'role-list')}
+                                </div>
+                            </div>
+                            <div className="available-features-group">
+                                <h3>Apex Actions</h3>
+                                <div className="feature-list-container">
+                                    {renderFeatureItems(availableApexActions, 'apex-list')}
                                 </div>
                             </div>
                         </>

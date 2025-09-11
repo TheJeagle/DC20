@@ -405,6 +405,35 @@ const allCreatureFeatures = [
         conditionApplied: "Taunted",
         conditionDuration: "until start of your next turn"
     },
+
+    // --- APEX ACTIONS ---
+    {
+        id: "apex_devastating_strike",
+        name: "Devastating Strike",
+        category: "apex_action",
+        actionType: "Melee Martial Attack",
+        tags: ["apex"],
+        descriptionCore: "You unleash a crushing melee blow dealing +2 damage.",
+        costAP: 1, costMP: 0, costSP: 0,
+        damageMod: 2,
+        targetsDefense: "PD",
+        rangeValue: 1, rangeUnit: "space",
+        targetDescription: "1 creature",
+    },
+    {
+        id: "apex_mythic_roar",
+        name: "Mythic Roar",
+        category: "apex_action",
+        actionType: "Spell",
+        tags: ["apex"],
+        descriptionCore: "Each enemy within 3 spaces must succeed on a CHA save or become frightened for 1 round.",
+        costAP: 2, costMP: 0, costSP: 0,
+        rangeValue: 3, rangeUnit: "space",
+        targetDescription: "all enemies",
+        saveAttribute: "Cha",
+        conditionApplied: "Frightened",
+        conditionDuration: "1 round",
+    },
 ];
 
 async function uploadFeatures() {
