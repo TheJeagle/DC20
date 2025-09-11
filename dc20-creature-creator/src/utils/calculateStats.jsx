@@ -64,7 +64,7 @@ export const calculateCreatureStats = (
         calculated.PD += powerScale.Defense || 0;
         calculated.AD += powerScale.Defense || 0;
         calculated.Check += powerScale.Check || 0;
-        calculated.SaveDC += powerScale.SaveDC || 0;
+        //SAVE DCs are done below, as it gets overwritten if stated here.
         calculated.Damage += powerScale.Damage || 0;
         calculated.AP += powerScale.AP || 0;
         // Apply power scaling to MaxMP (Role MP * Power Factor)
@@ -184,7 +184,7 @@ export const calculateCreatureStats = (
             }
         });
     }
-    calculated.SaveDC = 10 + (calculated.Attributes.Prime || 0) + CM_final;
+    calculated.SaveDC = 10 + (calculated.Attributes.Prime || 0) + CM_final + powerScale.SaveDC;
 
 
     // --- 6. Process Selected Features into Display Categories & CONSTRUCT Action/Attack Descriptions ---
