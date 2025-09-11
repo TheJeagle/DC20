@@ -50,7 +50,7 @@ export const roleModifiersData = {
         isCaster: false, // Could be true for some artillerists
     },
     brute: {
-        HPFactor: 2, PDMod: -4, ADMod: -4, CheckMod: 0, SpeedMod: 1, DamageMod: 1, MPMod: 0,
+        HPFactor: 1.5, PDMod: -3, ADMod: -2, CheckMod: 0, SpeedMod: 1, DamageMod: 1, MPMod: 0,
         SavesProficient: ["Int", "Cha", "Mig", "Agi"], AttributePriority: ["Mig", "Agi", "Cha", "Int"],
         Skills: ["athletics", "awareness", "survival"],
     },
