@@ -26,7 +26,7 @@ const InputPanel = ({
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState([]); // For results of global search
 
-    const powerLevels = ['Minion', 'Weak', 'Normal', 'Elite', 'Solo']; // Your power levels
+    const powerLevels = ['Minion', 'Weak', 'Normal', 'Apex', 'Legendary']; // Updated power tiers
     const types = ['undead', 'humanoid', 'beast', 'elemental', 'construct'];
     const roles = ['artillerist', 'brute', 'controller', 'defender', 'leader', 'lurker', 'skirmisher', 'support', 'none', 'caster'];
     const sizes = ['tiny', 'small', 'medium', 'large', 'huge', 'gargantuan'];

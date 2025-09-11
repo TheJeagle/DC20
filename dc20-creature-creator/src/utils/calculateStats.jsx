@@ -72,6 +72,17 @@ export const calculateCreatureStats = (
         console.warn(`Power scale not found for: ${power}.`);
     }
 
+    // --- 2.5. Apply Size-Based Defense/Attack Modifiers ---
+    // For each size step above medium: AD +1, PD -1; for each below: AD -1, PD +1
+    const sizeOrder = ['tiny', 'small', 'medium', 'large', 'huge', 'gargantuan'];
+    const sizeIndex = sizeOrder.indexOf((size || 'medium').toLowerCase());
+    const mediumIndex = sizeOrder.indexOf('medium');
+    if (sizeIndex !== -1 && mediumIndex !== -1) {
+        const sizeDelta = sizeIndex - mediumIndex;
+        calculated.AD += sizeDelta;
+        calculated.PD -= sizeDelta;
+    }
+
     // --- 4. Determine Attributes (Initial Calculation) ---
     const attributeLevelScores = attributeScoresByLevel.find(a => a.level === level)?.scores || [0, 0, 0, 0];
     if (roleMods.AttributePriority) {

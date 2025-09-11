@@ -101,6 +101,6 @@ export const powerScalingFactors = {
     minion: { HP: 0.5, Defense: -4, Check: -1, Damage: -1, AP: -1, MP: 1 },
     weak: { HP: 0.75, Defense: -2, Check: -1, Damage: 0, AP: -1, MP: 1 },
     normal: { HP: 1.0, Defense: 0, Check: 0, Damage: 0, AP: 0, MP: 1 },
-    elite: { HP: 1.5, Defense: 2, Check: 1, Damage: 1, AP: 0, MP: 1.5 },
-    solo: { HP: 2.0, Defense: 2, Check: 1, Damage: 2, AP: 0, MP: 2 },
+    apex: { HP: 2.0, Defense: 2, Check: 1, Damage: 1, AP: 0, MP: 1.5 },
+    legendary: { HP: 4.0, Defense: 2, Check: 1, Damage: 2, AP: 0, MP: 2 },
 };

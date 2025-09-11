@@ -54,7 +54,8 @@ const allCreatureFeatures = [
     {
         id: "feature_bulwark_guard",
         name: "Bulwark Guard",
-        descriptionCore: "While you haven’t moved this turn, you gain +1 PD and +1 AD until the start of your next turn.",
+
+        descriptionCore: "While you haven't moved this turn, you gain +1 PD and +1 AD until the start of your next turn.",
         category: "feature",
         tags: ["defender", "soldier"],
         effects: [
@@ -64,7 +65,7 @@ const allCreatureFeatures = [
     },
     {
         id: "feature_predators_pounce",
-        name: "Predator’s Pounce",
+        name: "Predator's Pounce",
         descriptionCore: "If you move at least 3 Spaces in a straight line before a Melee Attack, that Attack deals +1 damage.",
         category: "feature",
         tags: ["brute", "skirmisher", "beast"]
@@ -79,7 +80,8 @@ const allCreatureFeatures = [
     {
         id: "feature_glacial_footing",
         name: "Glacial Footing",
-        descriptionCore: "You ignore Difficult Terrain created by ice/snow, and effects cannot reduce your Speed below 2 while you’re on such terrain.",
+
+        descriptionCore: "You ignore Difficult Terrain created by ice or snow, and effects cannot reduce your Speed below 2 while you're on such terrain.",
         category: "feature",
         tags: ["controller", "elemental", "construct"]
     },
@@ -255,6 +257,7 @@ const allCreatureFeatures = [
         targetsDefense: "PD",
         rangeValue: 1, rangeUnit: "space",
         targetDescription: "1 creature",
+
         saveAttribute: "Physical",
         conditionApplied: "Hindered",
         conditionDuration: "until it resolves its next Attack",
@@ -275,6 +278,7 @@ const allCreatureFeatures = [
         areaSize: 5, // 5-space wall, 1-space thick
         targetDescription: "a 5-space wall",
         saveAttribute: "Physical",
+
         // Entering a wall Space or being pushed through it: 1 Cold; Failure: Slowed until end of next turn
     },
     {
@@ -288,7 +292,9 @@ const allCreatureFeatures = [
         damageMod: 0, damageType: "lightning",
         targetsDefense: "PD",
         rangeValue: 10, rangeUnit: "space",
+
         targetDescription: "1 creature; on hit, arcs to up to 2 additional creatures within 2 Spaces of the previous target (each separate Attack vs PD at −1 damageMod)."
+
     },
     {
         id: "action_galestep_cut",
@@ -318,7 +324,9 @@ const allCreatureFeatures = [
         areaShape: "sphere",
         areaSize: 2,
         targetDescription: "creatures in a 2-space sphere",
+
         saveAttribute: "Physical",
+
         // Failure: pulled up to 2 Spaces toward center; on Heavy Hit, also Prone.
     },
     {
@@ -356,6 +364,8 @@ const allCreatureFeatures = [
         tags: ["martial", "aoe"],
         descriptionCore: "When your Melee Attack hits, the blow sweeps onward.",
         costAP: 0, costMP: 0, costSP: 0,
+        damageMod: -1,
+
         targetsDefense: "AD",
         // Effect: One additional creature adjacent to the target takes your damage with damageMod: -1 (Area vs AD).
     },
@@ -366,7 +376,9 @@ const allCreatureFeatures = [
         tags: ["brute", "bleed"],
         descriptionCore: "Your strike opens a vicious wound.",
         costAP: 0, costMP: 0, costSP: 0,
+
         saveAttribute: "Physical",
+
         conditionApplied: "Bleeding",
         conditionDuration: "standard Bleeding duration"
     },
@@ -375,9 +387,9 @@ const allCreatureFeatures = [
         name: "Freezing Mark",
         category: "attack_enhancement",
         tags: ["cold", "control"],
-        descriptionCore: "Frost clings to the target’s limbs.",
+        descriptionCore: "Frost clings to the target's limbs.",
         costAP: 0, costMP: 1, costSP: 0,
-        saveAttribute: "Agility",
+        saveAttribute: "Agi",
         conditionApplied: "Slowed",
         conditionDuration: "until end of its next turn"
     },
@@ -386,9 +398,10 @@ const allCreatureFeatures = [
         name: "Domineering Taunt",
         category: "attack_enhancement",
         tags: ["defender", "taunt"],
-        descriptionCore: "You draw your foe’s focus with brutal bravado.",
-        costAP: 0, costMP: 0, costSP: 0,
-        saveAttribute: "Charisma",
+        descriptionCore: "You draw your foe's focus with brutal bravado.",
+        costAP: 1, costMP: 0, costSP: 0,
+        saveAttribute: "Cha",
+
         conditionApplied: "Taunted",
         conditionDuration: "until start of your next turn"
     },
