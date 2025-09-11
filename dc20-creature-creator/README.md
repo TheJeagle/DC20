@@ -7,7 +7,7 @@ This project contains a web application for building creatures for the **DC20** 
 Two main collections are used:
 
 - `features` – reusable traits and actions that a creature can possess.
-- `savedCreatures` – user created creatures. Each document stores the chosen feature ids, any stat overrides and a generated `Display` block used to render the stat block.
+- `savedCreatures` – user-created creatures. Each document stores the chosen feature ids, any stat overrides and a generated `Display` block used to render the stat block.
 
 ### `actions` array
 
