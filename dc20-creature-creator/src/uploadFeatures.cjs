@@ -54,6 +54,7 @@ const allCreatureFeatures = [
     {
         id: "feature_bulwark_guard",
         name: "Bulwark Guard",
+
         descriptionCore: "While you haven't moved this turn, you gain +1 PD and +1 AD until the start of your next turn.",
         category: "feature",
         tags: ["defender", "soldier"],
@@ -79,6 +80,7 @@ const allCreatureFeatures = [
     {
         id: "feature_glacial_footing",
         name: "Glacial Footing",
+
         descriptionCore: "You ignore Difficult Terrain created by ice or snow, and effects cannot reduce your Speed below 2 while you're on such terrain.",
         category: "feature",
         tags: ["controller", "elemental", "construct"]
@@ -255,7 +257,8 @@ const allCreatureFeatures = [
         targetsDefense: "PD",
         rangeValue: 1, rangeUnit: "space",
         targetDescription: "1 creature",
-        saveAttribute: "Phy",
+
+        saveAttribute: "Physical",
         conditionApplied: "Hindered",
         conditionDuration: "until it resolves its next Attack",
         // rider: if failure by 5+, also Slowed until end of its next turn
@@ -268,13 +271,14 @@ const allCreatureFeatures = [
         tags: ["controller", "cold", "zone"],
         descriptionCore: "Conjure a low wall of jagged ice that blocks movement and shapes the battlefield.",
         costAP: 2, costMP: 2, costSP: 0,
+        damageMod: 0, damageType: "cold",
         targetsDefense: "AD",
         rangeValue: 8, rangeUnit: "space",
         areaShape: "wall",
         areaSize: 5, // 5-space wall, 1-space thick
         targetDescription: "a 5-space wall",
-        damageType: "cold",
-        saveAttribute: "Phy",
+        saveAttribute: "Physical",
+
         // Entering a wall Space or being pushed through it: 1 Cold; Failure: Slowed until end of next turn
     },
     {
@@ -288,7 +292,9 @@ const allCreatureFeatures = [
         damageMod: 0, damageType: "lightning",
         targetsDefense: "PD",
         rangeValue: 10, rangeUnit: "space",
-        targetDescription: "1 creature; on hit, arcs to up to 2 additional creatures within 2 Spaces of the previous target (each separate Attack vs PD at -1 damageMod)."
+
+        targetDescription: "1 creature; on hit, arcs to up to 2 additional creatures within 2 Spaces of the previous target (each separate Attack vs PD at −1 damageMod)."
+
     },
     {
         id: "action_galestep_cut",
@@ -318,7 +324,9 @@ const allCreatureFeatures = [
         areaShape: "sphere",
         areaSize: 2,
         targetDescription: "creatures in a 2-space sphere",
-        saveAttribute: "Phy",
+
+        saveAttribute: "Physical",
+
         // Failure: pulled up to 2 Spaces toward center; on Heavy Hit, also Prone.
     },
     {
@@ -357,6 +365,7 @@ const allCreatureFeatures = [
         descriptionCore: "When your Melee Attack hits, the blow sweeps onward.",
         costAP: 0, costMP: 0, costSP: 0,
         damageMod: -1,
+
         targetsDefense: "AD",
         // Effect: One additional creature adjacent to the target takes your damage with damageMod: -1 (Area vs AD).
     },
@@ -367,7 +376,9 @@ const allCreatureFeatures = [
         tags: ["brute", "bleed"],
         descriptionCore: "Your strike opens a vicious wound.",
         costAP: 0, costMP: 0, costSP: 0,
-        saveAttribute: "Phy",
+
+        saveAttribute: "Physical",
+
         conditionApplied: "Bleeding",
         conditionDuration: "standard Bleeding duration"
     },
@@ -388,8 +399,9 @@ const allCreatureFeatures = [
         category: "attack_enhancement",
         tags: ["defender", "taunt"],
         descriptionCore: "You draw your foe's focus with brutal bravado.",
-        costAP: 0, costMP: 0, costSP: 0,
+        costAP: 1, costMP: 0, costSP: 0,
         saveAttribute: "Cha",
+
         conditionApplied: "Taunted",
         conditionDuration: "until start of your next turn"
     },
