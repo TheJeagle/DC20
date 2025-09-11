@@ -27,7 +27,7 @@ export const baseLevelStatsData = [
 ];
 // Corresponds to your statsPerLevel (for MIG, AGI, CHA, INT in order)
 export const attributeScoresByLevel = [
-    { level: 0, scores: [3, 1, 1, -2] }, // [Prime, Secondary, Tertiary, Quaternary]
+    { level: 0, scores: [2, 1, 1, -2] }, // [Prime, Secondary, Tertiary, Quaternary]
     { level: 1, scores: [3, 2, 1, -2] },
     { level: 2, scores: [3, 2, 2, -2] },
     { level: 3, scores: [3, 2, 2, -2] },
