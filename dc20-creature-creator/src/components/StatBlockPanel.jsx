@@ -199,6 +199,7 @@ const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature, onActi
                             <span>CHECK: <EditableField value={display.Combat.Check.replace('+', '')} onSave={(f, val) => handleSave("Combat_Check", val)} fieldName="Combat_Check" fieldType="text" /></span>
                             <span>SAVE DC: <EditableField value={display.Combat.SaveDC} onSave={(f, val) => handleSave("Combat_SaveDC", val)} fieldName="Combat_SaveDC" /></span>
                             <span>AP: <EditableField value={display.Combat.AP} onSave={(f, val) => handleSave("Combat_AP", val)} fieldName="Combat_AP" /></span>
+                            {display.Combat.LAP && <span>LAP: <EditableField value={display.Combat.LAP} onSave={(f, val) => handleSave("Combat_LAP", val)} fieldName="Combat_LAP" /></span>}
                             <span>SPEED: <EditableField value={display.Combat.Speed} onSave={(f, val) => handleSave("Combat_Speed", val)} fieldName="Combat_Speed" /></span>
                         </div>
                     </div>
@@ -302,6 +303,22 @@ const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature, onActi
                                 <EditableField value={reaction.details} onSave={(f, val) => handleSave(`Reactions_${index}_details_set`, val)} fieldName={`Reactions_${index}_details_set`} fieldType="text" className="editable-description-field" />
                             </p>
                             {reaction.originalFeatureId && <HoverRemoveButton onClick={() => onRemoveFeature(findOriginalItemForRemove(reaction, "Reactions"))} />}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* --- Apex Actions --- */}
+            {display.ApexActions && display.ApexActions.length > 0 && (
+                <div className="sb-sub-section apex-actions-section">
+                    <h4 className="sb-sub-section-title"><GiCrownedExplosion className="sb-section-icon" />Apex Actions</h4>
+                    {display.ApexActions.map((apex, index) => (
+                        <div key={apex.originalFeatureId || `apex-${index}`} className="sb-list-item apex-action-item">
+                            <p>
+                                <EditableField value={apex.name} onSave={(f, val) => handleSave(`ApexActions_${index}_name_set`, val)} fieldName={`ApexActions_${index}_name_set`} fieldType="text" className="editable-name-field" />: {' '}
+                                <EditableField value={apex.details} onSave={(f, val) => handleSave(`ApexActions_${index}_details_set`, val)} fieldName={`ApexActions_${index}_details_set`} fieldType="text" className="editable-description-field" />
+                            </p>
+                            {apex.originalFeatureId && <HoverRemoveButton onClick={() => onRemoveFeature(findOriginalItemForRemove(apex, "ApexActions"))} />}
                         </div>
                     ))}
                 </div>

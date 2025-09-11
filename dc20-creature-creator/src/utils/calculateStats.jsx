@@ -20,12 +20,12 @@ export const calculateCreatureStats = (
     let calculated = {
         Name: creatureName || "Unnamed Creature",
         Level: level, Power: power, Type: type, Role: role, Size: size,
-        HP: 0, PD: 0, AD: 0, Check: 0, Damage: 0, AP: 0, Speed: 0, MaxMP: 0,
+        HP: 0, PD: 0, AD: 0, Check: 0, Damage: 0, AP: 0, LAP: 0, Speed: 0, MaxMP: 0,
         Attributes: { Mig: 0, Agi: 0, Cha: 0, Int: 0, Prime: 0 },
         Saves: { Mig: null, Agi: null, Cha: null, Int: null },
         Skills: {}, Resistances: [], Vulnerabilities: [], Immunities: [],
         Senses: [], Languages: [], Features: [], CombatActions: [],
-        Reactions: [], AttackEnhancements: [], PDR: '', Range: "Melee",
+        ApexActions: [], Reactions: [], AttackEnhancements: [], PDR: '', Range: "Melee",
         isCaster: false, isMartial: true, SaveDC: 10, DefaultAttacks: [],
     };
 
@@ -71,6 +71,8 @@ export const calculateCreatureStats = (
     } else {
         console.warn(`Power scale not found for: ${power}.`);
     }
+
+    calculated.LAP = power === 'apex' ? 3 : power === 'legendary' ? 6 : 0;
 
     // --- 2.5. Apply Size-Based Defense/Attack Modifiers ---
     // For each size step above medium: AD +1, PD -1; for each below: AD -1, PD +1
@@ -257,6 +259,67 @@ export const calculateCreatureStats = (
                     ...feature, name, calculatedDamage: finalActionDamage,
                     calculatedSaveDC: (calculated.SaveDC || 0) + (saveDCMod || 0),
                     displayCost: displayCostStr,
+                    displayDescription: descDisplayParts.filter(p => p && p.trim() !== '').join(' '),
+                    originalFeatureId: id || originalFeatureId
+                });
+                break;
+            }
+            case 'apex_action': {
+                let finalActionDamage = 0;
+                if (actionType && (actionType.includes("Attack") || actionType.includes("Spell"))) {
+                    if (typeof feature.baseDamageOverride === 'number') {
+                        finalActionDamage = feature.baseDamageOverride + damageMod;
+                    } else {
+                        finalActionDamage = (calculated.Damage || 0) + damageMod;
+                    }
+                }
+
+                let costParts = [];
+                if (costAP > 0) costParts.push(`${costAP} AP`);
+                if (costMP > 0) costParts.push(`${costMP} MP`);
+                let displayCostStr = costParts.join(' + ') || 'Free';
+
+                let descDisplayParts = [];
+
+                if (finalActionDamage > 0) {
+                    descDisplayParts.push(`${finalActionDamage} ${damageType || 'damage'} damage${targetsDefense ? ` vs ${targetsDefense}` : ''}.`);
+                }
+                let targetInfo = targetDescription || (areaShape ? (areaSize ? `${areaSize}-space ${areaShape}` : areaShape) : 'target');
+
+                let rangeInfo = '';
+                if (rangeValue > 0 && rangeUnit === 'space') {
+                    rangeInfo = `${rangeValue} space(s)`;
+                } else if (rangeUnit) {
+                    rangeInfo = rangeUnit.charAt(0).toUpperCase() + rangeUnit.slice(1);
+                }
+                if (targetInfo || rangeInfo) {
+                    descDisplayParts.push(`Target ${targetInfo}${rangeInfo ? ` within ${rangeInfo}` : ''}.`);
+                }
+
+                if (saveAttribute) {
+                    const finalActionSaveDC = (calculated.SaveDC || 0) + (saveDCMod || 0);
+                    let saveStr = `Target makes a ${saveAttribute} save (DC ${finalActionSaveDC})`;
+                    saveStr += conditionApplied ? ` or becomes ${conditionApplied}` : ` for effect`;
+                    if (conditionApplied && conditionDuration) saveStr += ` (${conditionDuration.replace("your", "its")})`;
+                    descDisplayParts.push(saveStr + ".");
+                } else if (conditionApplied) {
+                    let condStr = `Applies ${conditionApplied}`;
+                    if (conditionDuration) condStr += ` (${conditionDuration.replace("your", "its")})`;
+                    descDisplayParts.push(condStr + ".");
+                }
+                if (healingAmount) descDisplayParts.push(healingAmount === "damage dealt" ? "You regain HP equal to damage dealt." : `Heals for ${healingAmount} HP.`);
+
+                if (descriptionCore || description) {
+                    descDisplayParts.push(descriptionCore || description);
+                } else if (!descDisplayParts.length && name) {
+                    descDisplayParts.push(name);
+                }
+
+                calculated.ApexActions.push({
+                    ...feature, name,
+                    calculatedDamage: finalActionDamage,
+                    calculatedSaveDC: (calculated.SaveDC || 0) + (saveDCMod || 0),
+                    cost: displayCostStr,
                     displayDescription: descDisplayParts.filter(p => p && p.trim() !== '').join(' '),
                     originalFeatureId: id || originalFeatureId
                 });
@@ -534,11 +597,12 @@ export const calculateCreatureStats = (
             Features: finalCalcs.Features.map(f => ({ name: f.name, description: f.description, originalFeatureId: f.originalFeatureId })),
             Combat: {
                 Check: `${finalCalcs.Check >= 0 ? '+' : ''}${finalCalcs.Check}`, SaveDC: finalCalcs.SaveDC.toString(),
-                AP: finalCalcs.AP.toString(), Speed: finalCalcs.Speed.toString(),
+                AP: finalCalcs.AP.toString(), LAP: finalCalcs.LAP > 0 ? finalCalcs.LAP.toString() : '', Speed: finalCalcs.Speed.toString(),
                 Attacks: displayAttacks, OtherActions: otherDisplayCombatActions,
                 AttackEnhancements: finalCalcs.AttackEnhancements.map(enh => ({ name: `${enh.name} (${enh.cost || 'Special'})`, details: enh.description, originalFeatureId: enh.originalFeatureId })),
             },
             Reactions: finalCalcs.Reactions.map(re => ({ name: `${re.name} (${re.cost || 'Reaction'})`, details: re.description, originalFeatureId: re.originalFeatureId })),
+            ApexActions: finalCalcs.ApexActions.map(aa => ({ name: `${aa.name} (${aa.cost || 'Free'})`, details: aa.displayDescription || aa.description, originalFeatureId: aa.originalFeatureId })),
         }
     };
 };
