@@ -1,75 +1,96 @@
 // src/App.jsx
-import React, { useState, useEffect, useRef } from 'react';
-import './CreatureCreatorPage.css'; // Your main stylesheet
+import React, { useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import './CreatureCreatorPage.css';
 import RightBar from '../components/RightBar';
 import InputPanel from '../components/InputPanel';
 import StatBlockPanel from '../components/StatBlockPanel';
-
-import { calculateCreatureStats, generateDefaultActionFeatures } from '../utils/calculateStats';
-
-
+import {
+  buildCreature,
+  getDefaultCreatureState,
+  loadCreatureFromSession,
+  normalizeCreatureState,
+  saveCreatureToSession,
+  clearCreatureSession,
+} from '../domain/creatureBuilder';
 import { db } from '../firebase';
 import { collection, query, getDocs, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
-
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
-const CreatureCreatorPage = ({ currentUser }) => {
-  // --- State for Creature Inputs ---
-  const [creatureName, setCreatureName] = useState('Creature');
-  const [level, setLevel] = useState(1);
-  const [power, setPower] = useState('Normal'); // User-facing state
-  const [type, setType] = useState('undead');
-  const [role, setRole] = useState('none');
-  const [size, setSize] = useState('medium');
+const creatureStateReducer = (state, action) => {
+  switch (action.type) {
+    case 'SET_INPUT':
+      return {
+        ...state,
+        inputs: { ...state.inputs, [action.payload.key]: action.payload.value },
+      };
+    case 'SET_INPUTS':
+      return {
+        ...state,
+        inputs: { ...state.inputs, ...action.payload },
+      };
+    case 'SET_SELECTED_FEATURES':
+      return {
+        ...state,
+        selectedFeatures: action.payload,
+      };
+    case 'SET_OVERRIDES':
+      return {
+        ...state,
+        overrides: action.payload,
+      };
+    case 'SET_ACTION_OVERRIDES':
+      return {
+        ...state,
+        actionOverrides: action.payload,
+      };
+    case 'RESET':
+      return normalizeCreatureState(action.payload || getDefaultCreatureState());
+    default:
+      return state;
+  }
+};
 
-  // --- State for Features & Actions ---
+const initializeCreatureState = () => normalizeCreatureState(loadCreatureFromSession());
+
+const CreatureCreatorPage = ({ currentUser }) => {
+  const [creatureState, dispatch] = useReducer(creatureStateReducer, undefined, initializeCreatureState);
+  const { inputs, selectedFeatures, overrides, actionOverrides } = creatureState;
+
   const [allFeatures, setAllFeatures] = useState([]);
   const [isLoadingAllFeatures, setIsLoadingAllFeatures] = useState(true);
   const [availableTypeFeatures, setAvailableTypeFeatures] = useState([]);
   const [availableRoleFeatures, setAvailableRoleFeatures] = useState([]);
   const [availableApexActions, setAvailableApexActions] = useState([]);
-  const [selectedFeatures, setSelectedFeatures] = useState([]);
-  const [actions, setActions] = useState([]);
-
-  // --- State for Default Attack Overrides ---
-  const [defaultActionOverrides, setDefaultActionOverrides] = useState({});
-
-  // --- State for Overrides (Deltas and Sets) ---
-  const [overrides, setOverrides] = useState({});
-
-  // --- State for the Final Calculated Stat Block ---
-  const [statBlock, setStatBlock] = useState(null);
+  const [isCreatingFeature, setIsCreatingFeature] = useState(false);
 
   const statBlockRef = useRef(null);
 
-  const [isCreatingFeature, setIsCreatingFeature] = useState(false);
+  const creatureBuild = useMemo(
+    () => buildCreature(inputs, selectedFeatures, overrides, actionOverrides),
+    [inputs, selectedFeatures, overrides, actionOverrides]
+  );
+  const statBlock = creatureBuild.creature;
 
-  // Initialize default actions on mount
   useEffect(() => {
-    const inputs = { level, power: power.toLowerCase(), role, type, size, creatureName };
-    const defs = generateDefaultActionFeatures(inputs);
-    setActions(defs);
-  }, []);
+    saveCreatureToSession(creatureState);
+  }, [creatureState]);
 
-  // --- Effect 1: Fetch ALL features ONCE on component mount ---
   useEffect(() => {
     const fetchAllFeaturesData = async () => {
       setIsLoadingAllFeatures(true);
-      // console.log("Fetching ALL features from Firestore..."); // Keep for debug if needed
       try {
-        const featuresCollectionRef = collection(db, "features");
-        const q = query(featuresCollectionRef, orderBy("category"), orderBy("name"));
+        const featuresCollectionRef = collection(db, 'features');
+        const q = query(featuresCollectionRef, orderBy('category'), orderBy('name'));
         const querySnapshot = await getDocs(q);
-        const featuresData = querySnapshot.docs.map(doc => ({
+        const featuresData = querySnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         }));
         setAllFeatures(featuresData);
-        setAvailableApexActions(featuresData.filter(f => f.category === 'apex_action'));
-        // console.log(`Fetched ${featuresData.length} total features.`);
+        setAvailableApexActions(featuresData.filter((f) => f.category === 'apex_action'));
       } catch (error) {
-        console.error("Error fetching all features:", error);
+        console.error('Error fetching all features:', error);
       } finally {
         setIsLoadingAllFeatures(false);
       }
@@ -77,310 +98,248 @@ const CreatureCreatorPage = ({ currentUser }) => {
     fetchAllFeaturesData();
   }, []);
 
-  // --- Effect 2: Filter allFeatures to create availableTypeFeatures ---
   useEffect(() => {
     if (isLoadingAllFeatures) {
-      setAvailableTypeFeatures([]); return;
+      setAvailableTypeFeatures([]);
+      return;
     }
-    if (type && allFeatures.length > 0) {
-      const lowerCaseType = type.toLowerCase();
-      const filtered = allFeatures.filter(feature =>
-        Array.isArray(feature.tags) && feature.tags.some(tag => tag.toLowerCase() === lowerCaseType)
+    if (inputs?.type && allFeatures.length > 0) {
+      const lowerCaseType = inputs.type.toLowerCase();
+      const filtered = allFeatures.filter(
+        (feature) => Array.isArray(feature.tags) && feature.tags.some((tag) => tag.toLowerCase() === lowerCaseType)
       );
       setAvailableTypeFeatures(filtered);
     } else {
       setAvailableTypeFeatures([]);
     }
-  }, [type, allFeatures, isLoadingAllFeatures]);
+  }, [inputs?.type, allFeatures, isLoadingAllFeatures]);
 
-  // --- Effect 3: Filter allFeatures to create availableRoleFeatures ---
   useEffect(() => {
     if (isLoadingAllFeatures) {
-      setAvailableRoleFeatures([]); return;
+      setAvailableRoleFeatures([]);
+      return;
     }
-    if (role && role.toLowerCase() !== 'none' && allFeatures.length > 0) {
-      const lowerCaseRole = role.toLowerCase();
-      const filtered = allFeatures.filter(feature =>
-        Array.isArray(feature.tags) && feature.tags.some(tag => tag.toLowerCase() === lowerCaseRole)
+    if (inputs?.role && inputs.role.toLowerCase() !== 'none' && allFeatures.length > 0) {
+      const lowerCaseRole = inputs.role.toLowerCase();
+      const filtered = allFeatures.filter(
+        (feature) => Array.isArray(feature.tags) && feature.tags.some((tag) => tag.toLowerCase() === lowerCaseRole)
       );
       setAvailableRoleFeatures(filtered);
     } else {
       setAvailableRoleFeatures([]);
     }
-  }, [role, allFeatures, isLoadingAllFeatures]);
+  }, [inputs?.role, allFeatures, isLoadingAllFeatures]);
 
-  // --- Effect 4: Re-calculate statBlock (NOW PASSES OVERRIDES) ---
-  useEffect(() => {
-    const inputs = { level, power: power.toLowerCase(), role, type, size, creatureName };
-    const newCalculatedStats = calculateCreatureStats(
-      inputs,
-      selectedFeatures,
-      overrides,
-      defaultActionOverrides
-    );
-    setStatBlock(newCalculatedStats);
-  }, [creatureName, level, power, type, role, size, selectedFeatures, overrides, defaultActionOverrides]);
-
-  // --- Effect 5: Build actions array from selected features and default attacks ---
-  useEffect(() => {
-    if (!statBlock) { setActions([]); return; }
-
-    const defaultActions = (statBlock.FinalWithDeltas?.DefaultAttacks || []).map(att => ({
-      name: att.name,
-      costAP: att.costAP || 0,
-      costMP: 0,
-      damageMod: 0,
-      saveDCMod: 0,
-      range: att.range,
-      targets: att.targetDescription,
-      actionType: att.type,
-      description: att.details,
-      source: 'default',
-    }));
-
-    const featureActions = selectedFeatures
-      .filter(f => f.category === 'action')
-      .map(f => ({
-        name: f.name,
-        costAP: f.costAP || 0,
-        costMP: f.costMP || 0,
-        damageMod: f.damageMod || 0,
-        saveDCMod: f.saveDCMod || 0,
-        range: f.range || '',
-        targets: f.targets || '',
-        actionType: f.actionType || '',
-        description: f.descriptionCore || f.description || '',
-        source: 'feature',
-      }));
-
-    setActions([...defaultActions, ...featureActions]);
-  }, [statBlock, selectedFeatures]);
-
-  // --- Handler for selecting/deselecting features via checkboxes ---
   const handleFeatureSelect = (feature, isSelected) => {
-    setSelectedFeatures(prev =>
-      isSelected
-        ? (prev.find(f => f.id === feature.id) ? prev : [...prev, feature])
-        : prev.filter(f => f.id !== feature.id)
-    );
-    if (feature.category === 'action') {
-      setActions(prev =>
-        isSelected
-          ? (prev.find(a => a.id === feature.id) ? prev : [...prev, feature])
-          : prev.filter(a => a.id !== feature.id)
-      );
-    }
+    dispatch({
+      type: 'SET_SELECTED_FEATURES',
+      payload: isSelected
+        ? selectedFeatures.find((f) => f.id === feature.id)
+          ? selectedFeatures
+          : [...selectedFeatures, feature]
+        : selectedFeatures.filter((f) => f.id !== feature.id),
+    });
   };
 
-  // --- Handler for removing features from selected list OR directly from stat block ---
   const handleRemoveSelectedFeature = (featureToRemove) => {
     if (!featureToRemove || !featureToRemove.id) {
-      console.warn("Attempted to remove feature without an ID", featureToRemove);
+      console.warn('Attempted to remove feature without an ID', featureToRemove);
       return;
     }
-    setSelectedFeatures(prev => prev.filter(f => f.id !== featureToRemove.id));
-    console.log("Removed feature:", featureToRemove.name);
-    if (featureToRemove.category === 'action') {
-      setActions(prev => prev.filter(a => a.id !== featureToRemove.id));
-    }
+    dispatch({
+      type: 'SET_SELECTED_FEATURES',
+      payload: selectedFeatures.filter((f) => f.id !== featureToRemove.id),
+    });
+    console.log('Removed feature:', featureToRemove.name);
   };
-
-  // --- Handler for when a user edits a field in StatBlockPanel ---
-  // src/App.jsx
-
-  // ... (inside the App component)
 
   const handleStatOverride = (fieldName, newAbsoluteValueFromInput) => {
     if (!statBlock || !statBlock.CalculatedBeforeDeltas) {
-      console.error("Cannot calculate delta: statBlock.CalculatedBeforeDeltas is not available.");
-      setOverrides(prev => ({ ...prev, [`${fieldName}_set`]: newAbsoluteValueFromInput }));
+      console.error('Cannot calculate delta: statBlock.CalculatedBeforeDeltas is not available.');
+      dispatch({
+        type: 'SET_OVERRIDES',
+        payload: { ...overrides, [`${fieldName}_set`]: newAbsoluteValueFromInput },
+      });
       return;
     }
 
     const baseObjectForDelta = statBlock.CalculatedBeforeDeltas;
-    const pathParts = fieldName.split('_'); // e.g., ["Features", "0", "name"] or ["Attributes", "Mig"] or ["HP"]
+    const pathParts = fieldName.split('_');
 
     let originalValueForDeltaCalc;
     let currentLevel = baseObjectForDelta;
 
-    // Traverse the path to get the original value
-    for (let i = 0; i < pathParts.length; i++) {
+    for (let i = 0; i < pathParts.length; i += 1) {
       const part = pathParts[i];
-      if (currentLevel === null || typeof currentLevel === 'undefined') { // Path broken earlier
+      if (currentLevel === null || typeof currentLevel === 'undefined') {
         originalValueForDeltaCalc = undefined;
         break;
       }
 
-      if (Array.isArray(currentLevel) && !isNaN(parseInt(part, 10))) { // Part is an array index
+      if (Array.isArray(currentLevel) && !Number.isNaN(parseInt(part, 10))) {
         currentLevel = currentLevel[parseInt(part, 10)];
-      } else if (typeof currentLevel === 'object' && Object.prototype.hasOwnProperty.call(currentLevel, part)) { // Part is an object key
+      } else if (typeof currentLevel === 'object' && Object.prototype.hasOwnProperty.call(currentLevel, part)) {
         currentLevel = currentLevel[part];
-      } else { // Part not found or path is invalid
+      } else {
         originalValueForDeltaCalc = undefined;
         break;
       }
-      // If this is the last part of the path, this is our target value
+
       if (i === pathParts.length - 1) {
         originalValueForDeltaCalc = currentLevel;
       }
     }
 
+    const updatedOverrides = { ...overrides };
+
     if (typeof originalValueForDeltaCalc === 'undefined') {
       console.warn(`Cannot find original value for delta for field: "${fieldName}" in CalculatedBeforeDeltas. Storing as absolute set.`);
-      setOverrides(prevOverrides => ({ ...prevOverrides, [`${fieldName}_set`]: newAbsoluteValueFromInput }));
+      updatedOverrides[`${fieldName}_set`] = newAbsoluteValueFromInput;
+      dispatch({ type: 'SET_OVERRIDES', payload: updatedOverrides });
       return;
     }
 
-    // Determine if the override should be a delta or a set
-    // If original or new value is a string, or if original is not a number (e.g. null for an optional numeric field), treat as a set.
-    const originalIsNumeric = typeof originalValueForDeltaCalc === 'number' && !isNaN(originalValueForDeltaCalc);
-    const newIsActualNumber = typeof newAbsoluteValueFromInput === 'number' && !isNaN(newAbsoluteValueFromInput);
+    const originalIsNumeric = typeof originalValueForDeltaCalc === 'number' && !Number.isNaN(originalValueForDeltaCalc);
+    const newIsActualNumber = typeof newAbsoluteValueFromInput === 'number' && !Number.isNaN(newAbsoluteValueFromInput);
 
-    // Try to parse new input if it looks like a number but is a string
     let numericNewValue = newIsActualNumber ? newAbsoluteValueFromInput : parseInt(newAbsoluteValueFromInput, 10);
 
-
-    if (originalIsNumeric && !isNaN(numericNewValue)) { // Both original and new value can be treated as numbers
-      const numericOriginal = originalValueForDeltaCalc; // Already a number
+    if (originalIsNumeric && !Number.isNaN(numericNewValue)) {
+      const numericOriginal = originalValueForDeltaCalc;
       const delta = numericNewValue - numericOriginal;
 
       if (delta !== 0) {
         console.log(`Setting delta for ${fieldName}: ${delta} (new: ${numericNewValue}, original_base+feat: ${numericOriginal})`);
-        setOverrides(prevOverrides => {
-          const newO = { ...prevOverrides };
-          delete newO[`${fieldName}_set`]; // Clear any _set override
-          newO[`${fieldName}_delta`] = delta;
-          return newO;
-        });
-      } else { // Delta is 0, user edited it back to original value
+        delete updatedOverrides[`${fieldName}_set`];
+        updatedOverrides[`${fieldName}_delta`] = delta;
+      } else {
         console.log(`Delta for ${fieldName} is 0. Removing override.`);
-        setOverrides(prevOverrides => {
-          const newO = { ...prevOverrides };
-          delete newO[`${fieldName}_delta`];
-          delete newO[`${fieldName}_set`];
-          return newO;
-        });
+        delete updatedOverrides[`${fieldName}_delta`];
+        delete updatedOverrides[`${fieldName}_set`];
       }
-    } else { // Treat as a "set" override (e.g., for text fields, or if types mismatch)
+    } else {
       if (newAbsoluteValueFromInput !== originalValueForDeltaCalc) {
         console.log(`Setting absolute override for ${fieldName}: "${newAbsoluteValueFromInput}"`);
-        setOverrides(prevOverrides => {
-          const newO = { ...prevOverrides };
-          delete newO[`${fieldName}_delta`]; // Clear any _delta override
-          newO[`${fieldName}_set`] = newAbsoluteValueFromInput;
-          return newO;
-        });
-      } else { // User edited it back to the original value
+        delete updatedOverrides[`${fieldName}_delta`];
+        updatedOverrides[`${fieldName}_set`] = newAbsoluteValueFromInput;
+      } else {
         console.log(`Absolute override for ${fieldName} matches original. Removing override.`);
-        setOverrides(prevOverrides => {
-          const newO = { ...prevOverrides };
-          delete newO[`${fieldName}_delta`];
-          delete newO[`${fieldName}_set`];
-          return newO;
-        });
+        delete updatedOverrides[`${fieldName}_delta`];
+        delete updatedOverrides[`${fieldName}_set`];
       }
     }
+
+    dispatch({ type: 'SET_OVERRIDES', payload: updatedOverrides });
   };
-  // --- END OF handleStatOverride DEFINITION ---
 
   const handleActionUpdate = (actionIndex, field, value) => {
-    setSelectedFeatures(prev => {
-      const actionFeatures = prev.filter(f => f.category === 'action');
-      const target = actionFeatures[actionIndex];
-      if (!target) return prev;
-      const targetId = target.id;
-      return prev.map(f => {
-        if (f.id !== targetId) return f;
-        let newVal = value;
-        if (['costAP','costMP','costSP','damageMod','saveDCMod','rangeValue','areaSize'].includes(field)) {
-          const num = parseInt(value, 10);
-          newVal = isNaN(num) ? 0 : num;
-        }
-        return { ...f, [field]: newVal };
-      });
+    const actionFeatures = selectedFeatures.filter((f) => f.category === 'action');
+    const target = actionFeatures[actionIndex];
+    if (!target) return;
+    const targetId = target.id;
+    const updatedFeatures = selectedFeatures.map((feature) => {
+      if (feature.id !== targetId) return feature;
+      let newVal = value;
+      if (['costAP', 'costMP', 'costSP', 'damageMod', 'saveDCMod', 'rangeValue', 'areaSize'].includes(field)) {
+        const num = parseInt(value, 10);
+        newVal = Number.isNaN(num) ? 0 : num;
+      }
+      return { ...feature, [field]: newVal };
     });
+    dispatch({ type: 'SET_SELECTED_FEATURES', payload: updatedFeatures });
   };
 
   const handleDefaultActionUpdate = (actionIndex, field, value) => {
-    setDefaultActionOverrides(prev => {
-      const current = prev[actionIndex] || {};
-      let newVal = value;
-      if (['costAP', 'costMP', 'damage'].includes(field)) {
-        const num = parseInt(value, 10);
-        newVal = isNaN(num) ? 0 : num;
-      }
-      return { ...prev, [actionIndex]: { ...current, [field]: newVal } };
+    const current = actionOverrides[actionIndex] || {};
+    let newVal = value;
+    if (['costAP', 'costMP', 'damage'].includes(field)) {
+      const num = parseInt(value, 10);
+      newVal = Number.isNaN(num) ? 0 : num;
+    }
+    dispatch({
+      type: 'SET_ACTION_OVERRIDES',
+      payload: {
+        ...actionOverrides,
+        [actionIndex]: { ...current, [field]: newVal },
+      },
     });
   };
 
+  const handleToggleFeatureCreationForm = () => setIsCreatingFeature((prev) => !prev);
 
-  // --- Custom Feature Creation Handlers ---
-  const handleToggleFeatureCreationForm = () => setIsCreatingFeature(prev => !prev);
   const handleAddCustomFeatureToSelection = (newFeatureData) => {
-    const featureWithId = newFeatureData.id ? newFeatureData : { ...newFeatureData, id: `custom-${Date.now()}-${Math.random().toString(16).slice(2)}` };
-    setSelectedFeatures(prev => [...prev, featureWithId]);
-    if (featureWithId.category === 'action') {
-      setActions(prev => [...prev, featureWithId]);
-    }
+    const featureWithId = newFeatureData.id
+      ? newFeatureData
+      : { ...newFeatureData, id: `custom-${Date.now()}-${Math.random().toString(16).slice(2)}` };
+    dispatch({ type: 'SET_SELECTED_FEATURES', payload: [...selectedFeatures, featureWithId] });
     setIsCreatingFeature(false);
   };
+
   const handleSaveCustomFeatureToDBAndAddToSelection = async (newFeatureData) => {
     const featureToSave = { ...newFeatureData, createdAt: serverTimestamp() };
     try {
-      const docRef = await addDoc(collection(db, "userMadeFeatures"), featureToSave);
+      const docRef = await addDoc(collection(db, 'userMadeFeatures'), featureToSave);
       handleAddCustomFeatureToSelection({ ...newFeatureData, id: docRef.id });
       return true;
-    } catch (error) { console.error("Error saving custom feature:", error); return false; }
+    } catch (error) {
+      console.error('Error saving custom feature:', error);
+      return false;
+    }
   };
 
-  // --- Handler for "Create New" (NOW CLEARS OVERRIDES) ---
   const handleCreateNew = () => {
-    console.log("Create New clicked");
-    setCreatureName('Creature'); setLevel(1); setPower('Normal');
-    setType('humanoid'); setRole('none'); setSize('medium');
-    setSelectedFeatures([]);
-    setActions(generateDefaultActionFeatures({ level: 1, power: 'normal', role: 'none', type: 'humanoid', size: 'medium', creatureName: 'Creature' }));
-    setOverrides({}); // <<< CLEAR OVERRIDES
-    setDefaultActionOverrides({});
-    setActions([]);
+    console.log('Create New clicked');
+    dispatch({ type: 'RESET', payload: getDefaultCreatureState() });
+    clearCreatureSession();
     setIsCreatingFeature(false);
   };
 
-  // --- Handler for "Save" (NOW SAVES OVERRIDES) ---
   const handleSave = async () => {
-    if (!currentUser) { alert("Please log in to save."); return; }
-    if (!creatureName.trim() || !statBlock) { alert("Name/stats required."); return; }
-    // console.log("Saving creature with overrides:", overrides);
+    if (!currentUser) {
+      alert('Please log in to save.');
+      return;
+    }
+    if (!inputs.creatureName?.trim() || !statBlock) {
+      alert('Name/stats required.');
+      return;
+    }
+
     const creatureDataToSave = {
-      name: creatureName,
-      level,
-      power,
-      type,
-      role,
-      size,
-      actions,
-      selectedFeatureIds: selectedFeatures.map(f => f.id),
-      statModifiers: overrides, // Save the deltas/sets
-      defaultActionOverrides,
+      name: inputs.creatureName,
+      level: inputs.level,
+      power: inputs.power,
+      type: inputs.type,
+      role: inputs.role,
+      size: inputs.size,
+      actions: creatureBuild.display.actions,
+      selectedFeatureIds: selectedFeatures.map((f) => f.id),
+      statModifiers: overrides,
+      defaultActionOverrides: actionOverrides,
       votes: 0,
       createdAt: serverTimestamp(),
       ownerId: currentUser.uid,
       submittedBy: currentUser.email,
     };
+
     try {
-      const docRef = await addDoc(collection(db, "savedCreatures"), creatureDataToSave);
-      console.log("Creature saved with ID: ", docRef.id);
-      alert(`${creatureName} saved successfully!`);
-    } catch (e) { console.error("Error saving doc: ", e); alert(`Failed to save ${creatureName}.`); }
+      const docRef = await addDoc(collection(db, 'savedCreatures'), creatureDataToSave);
+      console.log('Creature saved with ID: ', docRef.id);
+      alert(`${inputs.creatureName} saved successfully!`);
+    } catch (e) {
+      console.error('Error saving doc: ', e);
+      alert(`Failed to save ${inputs.creatureName}.`);
+    }
   };
 
-  // --- Handler for "Export" ---
   const handleExport = async () => {
-    if (!statBlockRef.current) { alert("No stats to export."); return; }
+    if (!statBlockRef.current) {
+      alert('No stats to export.');
+      return;
+    }
     try {
       const canvas = await html2canvas(statBlockRef.current);
       const imageData = canvas.toDataURL('image/png');
-      const fileBase = (creatureName || 'creature').replace(/\s+/g, '_') + '_statblock';
+      const fileBase = (inputs.creatureName || 'creature').replace(/\s+/g, '_') + '_statblock';
       const link = document.createElement('a');
       link.href = imageData;
       link.download = `${fileBase}.png`;
@@ -395,25 +354,12 @@ const CreatureCreatorPage = ({ currentUser }) => {
     }
   };
 
-  // Log selected features when they change (for debugging)
-  // useEffect(() => {
-  //   console.log("Current selectedFeatures:", selectedFeatures.map(f => ({ id: f.id, name: f.name })));
-  // }, [selectedFeatures]);
-  // useEffect(() => {
-  //   console.log("Current Overrides:", overrides);
-  // }, [overrides]);
-
-
   return (
     <>
       <div className="app-container">
         <InputPanel
-          creatureName={creatureName} setCreatureName={setCreatureName}
-          level={level} setLevel={setLevel}
-          power={power} setPower={setPower}
-          type={type} setType={setType}
-          role={role} setRole={setRole}
-          size={size} setSize={setSize}
+          inputs={inputs}
+          onUpdateInput={(key, value) => dispatch({ type: 'SET_INPUT', payload: { key, value } })}
           allFeatures={allFeatures}
           availableTypeFeatures={availableTypeFeatures}
           availableRoleFeatures={availableRoleFeatures}
@@ -429,20 +375,16 @@ const CreatureCreatorPage = ({ currentUser }) => {
         />
         <StatBlockPanel
           ref={statBlockRef}
-          fullStatBlock={statBlock} // This now contains CalculatedBeforeDeltas, FinalWithDeltas, Display
-          onStatOverride={handleStatOverride} // Pass the handler
-          onRemoveFeature={handleRemoveSelectedFeature} // Pass this for removing features from stat block
+          fullStatBlock={statBlock}
+          onStatOverride={handleStatOverride}
+          onRemoveFeature={handleRemoveSelectedFeature}
           onActionUpdate={handleActionUpdate}
           onDefaultActionUpdate={handleDefaultActionUpdate}
         />
-        <RightBar
-          onCreateNew={handleCreateNew}
-          onSave={handleSave}
-          onExport={handleExport}
-        />
+        <RightBar onCreateNew={handleCreateNew} onSave={handleSave} onExport={handleExport} />
       </div>
     </>
   );
-}
+};
 
 export default CreatureCreatorPage;
