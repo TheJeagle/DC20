@@ -13,7 +13,7 @@ describe('calculateCreatureStats', () => {
     };
 
     const result = calculateCreatureStats(inputs, [], {});
-    const final = result.FinalWithDeltas;
+    const final = result.raw;
 
     expect(final).toBeDefined();
     expect(final.HP).toBe(10);
@@ -26,10 +26,10 @@ describe('calculateCreatureStats', () => {
     expect(final.MaxMP).toBe(0);
     expect(final.Attributes).toEqual({ Mig: 3, Agi: 2, Cha: 1, Int: -2, Prime: 3 });
     expect(final.Saves).toEqual({ Mig: 4, Agi: 3, Cha: 2, Int: -1 });
-    expect(result.Display.PD).toBe('12 (17/22)');
-    expect(result.Display.Combat.Check).toBe('+4');
-    expect(result.Display.Combat.AP).toBe('4');
-    expect(result.Display.Combat.Speed).toBe('5');
+    expect(result.display.PD).toBe('12 (17/22)');
+    expect(result.display.Combat.Check).toBe('+4');
+    expect(result.display.Combat.AP).toBe('4');
+    expect(result.display.Combat.Speed).toBe('5');
   });
 
 
@@ -60,7 +60,7 @@ describe('calculateCreatureStats', () => {
     };
 
     const result = calculateCreatureStats(inputs, [action], {});
-    const displayAttack = result.Display.Combat.Attacks.find(a => a.name.startsWith('Fiery Strike'));
+    const displayAttack = result.display.Combat.Attacks.find(a => a.name.startsWith('Fiery Strike'));
     expect(displayAttack).toBeDefined();
     expect(displayAttack.details).toContain('4 fire damage vs PD.');
     expect(displayAttack.details).toContain('DC 16');
@@ -87,8 +87,8 @@ describe('calculateCreatureStats', () => {
 
     const result = calculateCreatureStats(inputs, [], {}, actionOverrides);
 
-    expect(result.FinalWithDeltas.DefaultAttacks[0].damage).toBe(8);
-    const displayAttack = result.Display.Combat.Attacks[0];
+    expect(result.raw.DefaultAttacks[0].damage).toBe(8);
+    const displayAttack = result.display.Combat.Attacks[0];
     expect(displayAttack.name).toBe('Custom Attack');
     expect(displayAttack.details).toContain('8 physical damage');
   });
@@ -116,9 +116,9 @@ describe('calculateCreatureStats', () => {
     };
 
     const result = calculateCreatureStats(inputs, [apexAction], {});
-    expect(result.FinalWithDeltas.LAP).toBe(3);
-    expect(result.Display.Combat.LAP).toBe('3');
-    const aa = result.Display.ApexActions.find(a => a.name.startsWith('Tail Sweep'));
+    expect(result.raw.LAP).toBe(3);
+    expect(result.display.Combat.LAP).toBe('3');
+    const aa = result.display.ApexActions.find(a => a.name.startsWith('Tail Sweep'));
     expect(aa).toBeDefined();
     expect(aa.details).toContain('Swipe your tail');
   });

@@ -154,8 +154,9 @@ const CreatureCreatorPage = ({ currentUser }) => {
   };
 
   const handleStatOverride = (fieldName, newAbsoluteValueFromInput) => {
-    if (!statBlock || !statBlock.CalculatedBeforeDeltas) {
-      console.error('Cannot calculate delta: statBlock.CalculatedBeforeDeltas is not available.');
+    const baseObjectForDelta = statBlock?.derived?.snapshots?.beforeOverrides;
+    if (!baseObjectForDelta) {
+      console.error('Cannot calculate delta: statBlock.derived.snapshots.beforeOverrides is not available.');
       dispatch({
         type: 'SET_OVERRIDES',
         payload: { ...overrides, [`${fieldName}_set`]: newAbsoluteValueFromInput },
@@ -163,7 +164,6 @@ const CreatureCreatorPage = ({ currentUser }) => {
       return;
     }
 
-    const baseObjectForDelta = statBlock.CalculatedBeforeDeltas;
     const pathParts = fieldName.split('_');
 
     let originalValueForDeltaCalc;
@@ -193,7 +193,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
     const updatedOverrides = { ...overrides };
 
     if (typeof originalValueForDeltaCalc === 'undefined') {
-      console.warn(`Cannot find original value for delta for field: "${fieldName}" in CalculatedBeforeDeltas. Storing as absolute set.`);
+      console.warn(`Cannot find original value for delta for field: "${fieldName}" in base snapshot. Storing as absolute set.`);
       updatedOverrides[`${fieldName}_set`] = newAbsoluteValueFromInput;
       dispatch({ type: 'SET_OVERRIDES', payload: updatedOverrides });
       return;
