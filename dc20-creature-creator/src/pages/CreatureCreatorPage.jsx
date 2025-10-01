@@ -1,5 +1,5 @@
 // src/App.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './CreatureCreatorPage.css'; // Your main stylesheet
 import RightBar from '../components/RightBar';
 import InputPanel from '../components/InputPanel';
@@ -10,6 +10,9 @@ import { calculateCreatureStats, generateDefaultActionFeatures } from '../utils/
 
 import { db } from '../firebase';
 import { collection, query, getDocs, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 const CreatureCreatorPage = ({ currentUser }) => {
   // --- State for Creature Inputs ---
@@ -37,6 +40,8 @@ const CreatureCreatorPage = ({ currentUser }) => {
 
   // --- State for the Final Calculated Stat Block ---
   const [statBlock, setStatBlock] = useState(null);
+
+  const statBlockRef = useRef(null);
 
   const [isCreatingFeature, setIsCreatingFeature] = useState(false);
 
@@ -370,27 +375,24 @@ const CreatureCreatorPage = ({ currentUser }) => {
   };
 
   // --- Handler for "Export" ---
-  const handleExport = () => { /* ... same as your existing logic ... */
-    if (statBlock) {
-      const dataToExport = { // Export a cleaner version if desired
-        inputs: { name: creatureName, level, power, type, role, size },
-        actions,
-        selectedFeatureIds: selectedFeatures.map(f => f.id),
-        statModifiers: overrides,
-        defaultActionOverrides,
-        generatedDisplay: statBlock.Display
-      };
-      const jsonString = JSON.stringify(dataToExport, null, 2);
-      const blob = new Blob([jsonString], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
+  const handleExport = async () => {
+    if (!statBlockRef.current) { alert("No stats to export."); return; }
+    try {
+      const canvas = await html2canvas(statBlockRef.current);
+      const imageData = canvas.toDataURL('image/png');
+      const fileBase = (creatureName || 'creature').replace(/\s+/g, '_') + '_statblock';
       const link = document.createElement('a');
-      link.href = url;
-      link.download = `${(creatureName || 'creature').replace(/\s+/g, '_')}_data.json`;
+      link.href = imageData;
+      link.download = `${fileBase}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } else { alert("No stats to export."); }
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [canvas.width, canvas.height] });
+      pdf.addImage(imageData, 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.save(`${fileBase}.pdf`);
+    } catch (err) {
+      console.error('Export failed', err);
+    }
   };
 
   // Log selected features when they change (for debugging)
@@ -426,6 +428,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
           onSaveCustomFeatureToDBAndAddToSelection={handleSaveCustomFeatureToDBAndAddToSelection}
         />
         <StatBlockPanel
+          ref={statBlockRef}
           fullStatBlock={statBlock} // This now contains CalculatedBeforeDeltas, FinalWithDeltas, Display
           onStatOverride={handleStatOverride} // Pass the handler
           onRemoveFeature={handleRemoveSelectedFeature} // Pass this for removing features from stat block
