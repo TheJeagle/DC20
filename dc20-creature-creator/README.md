@@ -1,52 +1,70 @@
 # DC20 Creature Creator
 
-This project contains a web application for building creatures for the **DC20** tabletop RPG. It is built with React and Vite and stores data in Firebase Firestore.
+DC20 Creature Creator is a React + Vite single-page application for designing tabletop RPG creatures with Firebase-powered authentication and persistence. It routes between the home dashboard, the interactive builder, authentication/account views, and saved-creature listings while keeping the logged-in user in context.
 
-## Firestore structure
+## Features
 
-Two main collections are used:
+- **Interactive creature builder:** The `/create` page combines the configuration sidebar, live stat-block preview, and quick-action toolbar, letting designers tweak attributes, select features, and export finished stat blocks in one place.
+- **Authentication and account management:** Users can sign in with email/password or Google, switch between login and registration modes, and return to the dashboard on success.
+- **Community home and voting:** The landing page highlights top-voted creations, allows authenticated players to upvote, and links straight into building or reviewing personal creations.
+- **Personal library:** The “My Creatures” table supports filtering and sorting saved stat blocks pulled from Firestore for the signed-in user.
 
-- `features` – reusable traits and actions that a creature can possess.
-- `savedCreatures` – user-created creatures. Each document stores the chosen feature ids, any stat overrides and a generated `Display` block used to render the stat block.
+## Project Structure
 
-### `actions` array
+- `src/pages/` – Page-level views such as `CreatureCreatorPage`, `HomePage`, `AuthPage`, and `MyCreaturesPage`. Routes are declared in `App.jsx`.
+- `src/components/` – Reusable UI pieces (e.g., `InputPanel`, `StatBlockPanel`, `RightBar`, `Navbar`).
+- `src/domain/` – Core builder orchestration (`creatureBuilder.js`) that normalizes state, invokes calculations, and persists session storage.
+- `src/utils/` – Game-rules engines for calculating stats, applying features and overrides, and formatting presentation values.
+- `src/data/gameRules.jsx` – Level, attribute, role, and power scaling tables that feed the calculators.
+- `src/uploadFeatures.cjs` – Firebase Admin script for seeding canonical feature definitions.
 
-Within `generatedDisplay.Combat` each saved creature document contains an `actions` array (under `Attacks` and `OtherActions`). Each entry has the following shape:
+## Getting Started
 
-```json
-{
-  "name": "Power Strike",
-  "details": "2 physical damage vs PD. Target 1 creature within 1 space.",
-  "originalFeatureId": "generic_power_strike"
-}
-```
+1. Install dependencies: `npm install`
+2. Run the development server: `npm run dev`
+3. Execute the test suite: `npm test`
+4. Produce a production build: `npm run build`
+5. Preview a built bundle locally: `npm run preview`
 
-The entry originates from an object in the `features` collection with category `action`. Fields on a feature that influence the generated action include:
+All commands are defined in `package.json` and expect Node’s ES module semantics.
 
-- `costAP`, `costMP`, `costSP` – resource costs.
-- `actionType` – e.g. `Melee Martial Attack` or `Ranged Spell Attack`.
-- `damageMod` and `damageType` – applied on top of base damage.
-- `targetsDefense`, `rangeValue`/`rangeUnit`, `targetDescription` – used to build the action text.
-- `saveAttribute`, `conditionApplied`, `conditionDuration`, `healingAmount` – optional effect information.
+## Firebase & Environment
 
-### Damage and save DC scaling
+The app currently reads Firebase configuration directly from `src/firebase.js`. Replace the hard-coded keys with environment variables (e.g., Vite’s `import.meta.env`) before publishing, then initialize Firestore and Auth the same way the module does today.
 
-Base stats per level are defined in `src/data/gameRules.jsx`. Damage starts at **1** at level 0 and increases roughly every other level. Role modifiers and power scaling further adjust the final damage.
+Firestore hosts three key collections:
 
-The save DC is calculated as:
+- `features` – Base traits/actions loaded into the builder UI and filtered by creature type/role.
+- `savedCreatures` – Persisted creations captured from the builder, surfaced on the home page and personal library.
+- `userMadeFeatures` – Optional custom traits submitted through the builder’s creation form.
 
-```
-10 + prime attribute score + ceil(level / 2)
-```
+Use the Admin seeding script (`src/uploadFeatures.cjs`) to populate canonical features, updating the service-account path before execution.
 
-For example a level 5 creature with a prime attribute of 4 has a save DC of `10 + 4 + 3 = 17`.
+## Data & Game Rules
 
-## Development
+Stat baselines, attribute progressions, role modifiers, and power tiers originate from `src/data/gameRules.jsx`. These tables flow through `calculateBaseStats`, which sets HP/defenses, role adjustments, power scaling, size tweaks, and computed save DC values.
 
-1. Install dependencies with `npm install`.
-2. Start the dev server with `npm run dev`.
-3. Run tests with `npm test`.
-4. Build the production bundle using `npm run build`.
+## Managing the Creature Creator Code
 
-Pull requests and feature contributions are welcome. Please ensure all tests pass before submitting changes.
+1. **State & session orchestration:** The builder page uses a `useReducer` to manage inputs, selected features, and override maps, seeding from session storage on load and normalizing state through `creatureBuilder` helpers. Any reducer additions should stay serializable for session storage safety.
+2. **Feature catalog & search:** Features are fetched once from Firestore, filtered by type/role tags, and searchable by name, category, or tag via the `InputPanel`. When extending tagging or filters, update both the query logic and panel renderers.
+3. **Stat calculation pipeline:** `buildCreature` funnels normalized inputs to `calculateCreatureStats`, which builds base stats, applies feature effects, respects override deltas, and formats a presentation-ready display. When adjusting formulas, coordinate changes across `baseStats`, `featureEffects`, and `presentationFormatter` to keep raw/derived/display objects in sync.
+4. **Override handling:** When users edit stats in the UI, `handleStatOverride` records either numeric deltas or absolute replacements; `applyUserOverrides` replays those mutations before display. Maintain the `_delta` and `_set` suffix convention to preserve backwards compatibility.
+5. **Editable stat block UI:** `StatBlockPanel` renders raw/derived/display data, exposing inline editors and remove buttons tied back to reducer actions. Adding new sections requires both layout updates and appropriate override key mapping so edits persist.
+6. **Saving & export:** Saved creatures capture the display actions, selected feature IDs, override maps, and metadata before writing to Firestore. Exports convert the stat block DOM to PNG/PDF via `html2canvas` and `jsPDF`, so ensure any layout changes keep the stat block within the capture container.
+7. **Custom feature creation:** The toggleable `FeatureCreationForm` lets designers craft ad-hoc traits, optionally persisting them to `userMadeFeatures`. Extend the schema carefully, as the builder and calculators rely on fields like `category`, `actionType`, and `damageMod`.
+8. **Display formatting:** Final attack/feature text is generated in `presentationFormatter`; when introducing new action metadata (e.g., conditions), add formatting hooks there so the stat block stays legible.
+9. **Regression coverage:** `calculateStats.test.js` exercises base stat generation, action modifiers, override application, and apex action formatting. Expand this suite alongside any core rules changes to protect the pipeline.
 
+## Testing
+
+Run `npm test` to execute the Vitest suite covering the stat calculation pipeline.
+
+## Deployment
+
+Firebase Hosting is configured to serve the Vite build output from `dist` and rewrite SPA routes to `index.html`. After running `npm run build`, deploy with your Firebase project credentials, ensuring hosting rewrites remain intact.
+
+---
+
+## Testing
+⚠️ Tests not run (not requested).
