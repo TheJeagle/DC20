@@ -7,6 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       html2canvas: 'html2canvas/dist/html2canvas.esm.js',
+      jspdf: 'jspdf/dist/jspdf.es.min.js'
     },
   },
 })
