@@ -1,5 +1,5 @@
 // src/components/StatBlockPanel.jsx
-import React from 'react';
+import React, { forwardRef } from 'react';
 import './StatBlockPanel.css'; // Main CSS for the stat block
 import EditableField from './EditableField';
 import ActionInlineDisplay from './ActionInlineDisplay';
@@ -10,9 +10,9 @@ import {
     GiMagicSwirl, GiCrossedSwords, GiUpgrade, GiReturnArrow, GiSandsOfTime
 } from 'react-icons/gi';
 
-const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature, onActionUpdate, onDefaultActionUpdate }) => {
+const StatBlockPanel = forwardRef(({ fullStatBlock, onStatOverride, onRemoveFeature, onActionUpdate, onDefaultActionUpdate }, ref) => {
     if (!fullStatBlock || !fullStatBlock.Display || !fullStatBlock.CalculatedBeforeDeltas || !fullStatBlock.FinalWithDeltas) {
-        return <div className="stat-block-panel"><p>Calculating stats...</p></div>;
+        return <div className="stat-block-panel" ref={ref}><p>Calculating stats...</p></div>;
     }
 
     const { Name, Level, Type, Role, Power } = fullStatBlock; // Root level info
@@ -76,7 +76,7 @@ const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature, onActi
 
 
     return (
-        <div className="stat-block-panel">
+        <div className="stat-block-panel" ref={ref}>
             {/* --- HEADER --- */}
             <div className="top-header-section">
                 <h1 className="creature-title-main">
@@ -325,6 +325,6 @@ const StatBlockPanel = ({ fullStatBlock, onStatOverride, onRemoveFeature, onActi
             )}
         </div>
     );
-};
+});
 
 export default StatBlockPanel;
