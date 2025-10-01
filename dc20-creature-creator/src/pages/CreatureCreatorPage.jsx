@@ -12,6 +12,7 @@ import {
   saveCreatureToSession,
   clearCreatureSession,
 } from '../domain/creatureBuilder';
+import { generateDefaultActionFeatures } from '../utils/calculateStats';
 import { db } from '../firebase';
 import { collection, query, getDocs, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import html2canvas from 'html2canvas';
@@ -56,6 +57,13 @@ const initializeCreatureState = () => normalizeCreatureState(loadCreatureFromSes
 const CreatureCreatorPage = ({ currentUser }) => {
   const [creatureState, dispatch] = useReducer(creatureStateReducer, undefined, initializeCreatureState);
   const { inputs, selectedFeatures, overrides, actionOverrides } = creatureState;
+
+  const generatedDefaultActions = useMemo(() => {
+    if (!inputs) {
+      return generateDefaultActionFeatures(getDefaultCreatureState().inputs);
+    }
+    return generateDefaultActionFeatures(inputs);
+  }, [inputs?.level, inputs?.power, inputs?.role, inputs?.type, inputs?.size]);
 
   const [allFeatures, setAllFeatures] = useState([]);
   const [isLoadingAllFeatures, setIsLoadingAllFeatures] = useState(true);
@@ -289,7 +297,8 @@ const CreatureCreatorPage = ({ currentUser }) => {
 
   const handleCreateNew = () => {
     console.log('Create New clicked');
-    dispatch({ type: 'RESET', payload: getDefaultCreatureState() });
+    const defaultState = getDefaultCreatureState();
+    dispatch({ type: 'RESET', payload: defaultState });
     clearCreatureSession();
     setIsCreatingFeature(false);
   };
@@ -380,6 +389,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
           onRemoveFeature={handleRemoveSelectedFeature}
           onActionUpdate={handleActionUpdate}
           onDefaultActionUpdate={handleDefaultActionUpdate}
+          generatedDefaultActions={generatedDefaultActions}
         />
         <RightBar onCreateNew={handleCreateNew} onSave={handleSave} onExport={handleExport} />
       </div>

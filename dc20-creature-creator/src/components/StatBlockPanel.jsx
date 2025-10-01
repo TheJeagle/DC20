@@ -10,18 +10,64 @@ import {
     GiMagicSwirl, GiCrossedSwords, GiUpgrade, GiReturnArrow, GiSandsOfTime
 } from 'react-icons/gi';
 
-const StatBlockPanel = forwardRef(({ fullStatBlock, onStatOverride, onRemoveFeature, onActionUpdate, onDefaultActionUpdate }, ref) => {
-    const raw = fullStatBlock?.raw;
-    const display = fullStatBlock?.display;
-    const derived = fullStatBlock?.derived;
-    const baseSnapshot = derived?.snapshots?.beforeOverrides;
+const StatBlockPanel = forwardRef(
+    (
+        {
+            fullStatBlock,
+            onStatOverride,
+            onRemoveFeature,
+            onActionUpdate,
+            onDefaultActionUpdate,
+            generatedDefaultActions = [],
+        },
+        ref,
+    ) => {
+        const raw = fullStatBlock?.raw;
+        const display = fullStatBlock?.display;
+        const derived = fullStatBlock?.derived;
+        const baseSnapshot = derived?.snapshots?.beforeOverrides;
 
-    if (!raw || !display || !baseSnapshot) {
-        return <div className="stat-block-panel" ref={ref}><p>Calculating stats...</p></div>;
-    }
+        if (!raw || !display || !baseSnapshot) {
+            return <div className="stat-block-panel" ref={ref}><p>Calculating stats...</p></div>;
+        }
 
-    const { Name, Level, Type, Role, Power } = raw; // Root level info
-    const finalRaw = raw; // For finding original features for removal
+        const { Name, Level, Type, Role, Power } = raw; // Root level info
+        const finalRaw = raw; // For finding original features for removal
+
+        const defaultAttacksRaw = Array.isArray(finalRaw?.DefaultAttacks) ? finalRaw.DefaultAttacks : [];
+        const defaultDisplayAttacks = Array.isArray(display?.Combat?.Attacks)
+            ? display.Combat.Attacks.filter((a) => !a.originalFeatureId)
+            : [];
+
+        const resolvedDefaultAttacks = defaultDisplayAttacks.length > 0
+            ? defaultDisplayAttacks.map((attack, index) => ({
+                key: `default-attack-${index}`,
+                action: {
+                    ...(defaultAttacksRaw[index] || {}),
+                    ...attack,
+                },
+            }))
+            : generatedDefaultActions.map((action, index) => {
+                const range = action.rangeValue
+                    ? `${action.rangeValue} ${action.rangeUnit || ''}`.trim()
+                    : action.range || '';
+
+                return {
+                    key: `generated-default-attack-${index}`,
+                    action: {
+                        name: action.name,
+                        costAP: action.costAP ?? 0,
+                        costMP: action.costMP ?? 0,
+                        damage: action.baseDamageOverride ?? 0,
+                        calculatedDamage: action.baseDamageOverride ?? 0,
+                        damageType: action.damageType ?? 'damage',
+                        targetsDefense: action.targetsDefense ?? 'PD',
+                        targetDescription: action.targetDescription ?? '',
+                        range,
+                        details: action.descriptionCore || action.description || '',
+                    },
+                };
+            });
 
     const getEditableNumericValue = (statString) => {
         if (typeof statString === 'string') {
@@ -233,13 +279,10 @@ const StatBlockPanel = forwardRef(({ fullStatBlock, onStatOverride, onRemoveFeat
 
 
                     {/* Default attacks with inline editable fields */}
-                    {display.Combat.Attacks && display.Combat.Attacks.filter(a => !a.originalFeatureId).map((attack, index) => (
-                        <div key={`default-attack-${index}`} className="sb-list-item attack-item">
+                    {resolvedDefaultAttacks.length > 0 && resolvedDefaultAttacks.map(({ key, action }, index) => (
+                        <div key={key} className="sb-list-item attack-item">
                             <ActionInlineDisplay
-                                action={{
-                                    ...finalRaw.DefaultAttacks[index],
-                                    ...attack,
-                                }}
+                                action={action}
                                 onSaveField={(field, val) => handleDefaultAttackFieldSave(index, field, val)}
                             />
                         </div>

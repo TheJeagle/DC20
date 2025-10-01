@@ -180,6 +180,7 @@ export const generateDefaultActionFeatures = (inputs) => {
       rangeUnit,
       targetDescription: attack.targetDescription,
       descriptionCore: describeAttack(attack),
+      baseDamageOverride: attack.damage,
     };
   });
 };
