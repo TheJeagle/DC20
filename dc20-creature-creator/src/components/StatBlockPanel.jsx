@@ -11,13 +11,17 @@ import {
 } from 'react-icons/gi';
 
 const StatBlockPanel = forwardRef(({ fullStatBlock, onStatOverride, onRemoveFeature, onActionUpdate, onDefaultActionUpdate }, ref) => {
-    if (!fullStatBlock || !fullStatBlock.Display || !fullStatBlock.CalculatedBeforeDeltas || !fullStatBlock.FinalWithDeltas) {
+    const raw = fullStatBlock?.raw;
+    const display = fullStatBlock?.display;
+    const derived = fullStatBlock?.derived;
+    const baseSnapshot = derived?.snapshots?.beforeOverrides;
+
+    if (!raw || !display || !baseSnapshot) {
         return <div className="stat-block-panel" ref={ref}><p>Calculating stats...</p></div>;
     }
 
-    const { Name, Level, Type, Role, Power } = fullStatBlock; // Root level info
-    const display = fullStatBlock.Display; // Convenience alias
-    const finalRaw = fullStatBlock.FinalWithDeltas; // For finding original features for removal
+    const { Name, Level, Type, Role, Power } = raw; // Root level info
+    const finalRaw = raw; // For finding original features for removal
 
     const getEditableNumericValue = (statString) => {
         if (typeof statString === 'string') {
@@ -33,9 +37,9 @@ const StatBlockPanel = forwardRef(({ fullStatBlock, onStatOverride, onRemoveFeat
     // It will then call App.jsx's onStatOverride to calculate the delta
     const handleSave = (fieldName, newAbsoluteValueFromInput) => {
         // App.jsx's onStatOverride needs: fieldName, newAbsoluteValue, originalCalculatedValue
-        // We get originalCalculatedValue from fullStatBlock.CalculatedBeforeDeltas
+        // We get originalCalculatedValue from the snapshot prior to overrides
         let originalCalcValue;
-        const baseObjectForDelta = fullStatBlock.CalculatedBeforeDeltas;
+        const baseObjectForDelta = baseSnapshot;
         const pathParts = fieldName.split('_');
         let tempOriginalValue = baseObjectForDelta;
 
@@ -241,25 +245,43 @@ const StatBlockPanel = forwardRef(({ fullStatBlock, onStatOverride, onRemoveFeat
                         </div>
                     ))}
 
-                    {finalRaw.CombatActions && finalRaw.CombatActions.filter(a => a.actionType && (a.actionType.includes('Attack') || a.actionType.includes('Spell'))).map((act, idx) => (
-                        <div key={act.originalFeatureId || `attack-${idx}`} className="sb-list-item attack-item">
-                            <ActionInlineDisplay
-                                action={{ ...act, details: act.details || act.displayDescription }}
-                                onSaveField={(field, val) => handleActionFieldSave(idx, field, val)}
-                            />
-                            {act.originalFeatureId && <HoverRemoveButton onClick={() => onRemoveFeature(act)} />}
-                        </div>
-                    ))}
+                    {finalRaw.CombatActions && finalRaw.CombatActions.filter(a => a.actionType && (a.actionType.includes('Attack') || a.actionType.includes('Spell'))).map((act, idx) => {
+                        const displayAction = display.Combat.Attacks.find(a => a.originalFeatureId === act.originalFeatureId);
+                        const derivedAction = derived?.combatActions?.find(a => a.originalFeatureId === act.originalFeatureId);
+                        return (
+                            <div key={act.originalFeatureId || `attack-${idx}`} className="sb-list-item attack-item">
+                                <ActionInlineDisplay
+                                    action={{
+                                        ...act,
+                                        damage: derivedAction?.calculatedDamage ?? act.damage,
+                                        calculatedDamage: derivedAction?.calculatedDamage,
+                                        details: displayAction?.details,
+                                    }}
+                                    onSaveField={(field, val) => handleActionFieldSave(idx, field, val)}
+                                />
+                                {act.originalFeatureId && <HoverRemoveButton onClick={() => onRemoveFeature(act)} />}
+                            </div>
+                        );
+                    })}
 
-                    {finalRaw.CombatActions && finalRaw.CombatActions.filter(a => !a.actionType || !(a.actionType.includes('Attack') || a.actionType.includes('Spell'))).map((act, idx) => (
-                        <div key={act.originalFeatureId || `action-${idx}`} className="sb-list-item action-item">
-                            <ActionInlineDisplay
-                                action={{ ...act, details: act.details || act.displayDescription }}
-                                onSaveField={(field, val) => handleActionFieldSave(idx, field, val)}
-                            />
-                            {act.originalFeatureId && <HoverRemoveButton onClick={() => onRemoveFeature(act)} />}
-                        </div>
-                    ))}
+                    {finalRaw.CombatActions && finalRaw.CombatActions.filter(a => !a.actionType || !(a.actionType.includes('Attack') || a.actionType.includes('Spell'))).map((act, idx) => {
+                        const displayAction = display.Combat.OtherActions.find(a => a.originalFeatureId === act.originalFeatureId);
+                        const derivedAction = derived?.combatActions?.find(a => a.originalFeatureId === act.originalFeatureId);
+                        return (
+                            <div key={act.originalFeatureId || `action-${idx}`} className="sb-list-item action-item">
+                                <ActionInlineDisplay
+                                    action={{
+                                        ...act,
+                                        details: displayAction?.details,
+                                        damage: derivedAction?.calculatedDamage ?? act.damage,
+                                        calculatedDamage: derivedAction?.calculatedDamage,
+                                    }}
+                                    onSaveField={(field, val) => handleActionFieldSave(idx, field, val)}
+                                />
+                                {act.originalFeatureId && <HoverRemoveButton onClick={() => onRemoveFeature(act)} />}
+                            </div>
+                        );
+                    })}
                 </div>
             }
 

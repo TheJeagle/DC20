@@ -85,7 +85,7 @@ export const applyOverrides = (creatureState, overrides = {}, actionOverrides = 
 });
 
 const createDisplayActions = (statBlock, selectedFeatures = []) => {
-  const defaultActions = (statBlock?.FinalWithDeltas?.DefaultAttacks || []).map((attack) => ({
+  const defaultActions = (statBlock?.raw?.DefaultAttacks || []).map((attack) => ({
     name: attack.name,
     costAP: attack.costAP || 0,
     costMP: attack.costMP || 0,
@@ -94,7 +94,7 @@ const createDisplayActions = (statBlock, selectedFeatures = []) => {
     range: attack.range || '',
     targets: attack.targetDescription || '',
     actionType: attack.type || '',
-    description: attack.details || '',
+    description: '',
     source: 'default',
   }));
 
