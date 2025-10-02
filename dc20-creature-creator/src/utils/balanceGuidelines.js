@@ -22,15 +22,17 @@ const METRIC_DEFINITIONS = [
     id: 'pd',
     key: 'PD',
     label: 'Precision Defense',
-    soft: { abs: 1 },
-    hard: { abs: 3 },
+    soft: { abs: 2 },
+    hard: { abs: 4 },
+
   },
   {
     id: 'ad',
     key: 'AD',
     label: 'Area Defense',
-    soft: { abs: 1 },
-    hard: { abs: 3 },
+
+    soft: { abs: 2 },
+    hard: { abs: 4 },
   },
   {
     id: 'check',
@@ -59,7 +61,8 @@ const halfStep = (value) => Math.round(value * 2) / 2;
 
 export const getFeatureCostBudget = (level = 0, power = 'normal') => {
   const normalizedLevel = Number.isFinite(level) ? Math.max(0, level) : 0;
-  const baseBudget = normalizedLevel + 2; // Normal power expectation
+  const halfNormalizedLevel = Math.floor(normalizedLevel/2);
+  const baseBudget = halfNormalizedLevel + 1; // Normal power expectation
   const lowerBand = Math.max(0, baseBudget - 1);
   const upperBand = baseBudget + 1;
 
@@ -163,11 +166,13 @@ const evaluateAttributes = (actualStats, baselineStats, level) => {
   const totalDirection = totalDelta > 0 ? 'high' : totalDelta < 0 ? 'low' : 'ok';
   const maxDirection = maxDelta > 0 ? 'high' : maxDelta < 0 ? 'low' : 'ok';
 
+
   return {
     total: {
       id: 'attribute-total',
       actual: actualTotal,
       baseline: expectedTotal,
+
       expected: expectedTotal,
       delta: totalDelta,
       tone: totalTone,
@@ -175,6 +180,7 @@ const evaluateAttributes = (actualStats, baselineStats, level) => {
       label: 'Attribute Total',
     },
     max: {
+
       id: 'attribute-max',
       actual: actualMax,
       baseline: expectedMax,

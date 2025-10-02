@@ -60,7 +60,6 @@ const BalanceChecklist = ({ report }) => {
   }
 
   const { metrics, featureCost, attributeSummary, attackCoverage, overall } = report;
-
   const metricMap = Object.fromEntries(metrics.map((metric) => [metric.id, metric]));
   const coreMetrics = [
     metricMap.hp,
@@ -146,6 +145,7 @@ const BalanceChecklist = ({ report }) => {
         )}
       </div>
 
+
       <div className="balance-checklist-columns">
         <div className="balance-column">
           <h3>Core Stats</h3>
@@ -154,6 +154,7 @@ const BalanceChecklist = ({ report }) => {
         <div className="balance-column">
           <h3>Offense & Budget</h3>
           {secondaryItems.map((item) => renderSecondaryRow(item))}
+
         </div>
       </div>
     </section>

@@ -21,7 +21,8 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
         details = '',
     } = action;
 
-    const finalDamage = typeof damage === 'number' ? damage : (typeof calculatedDamage === 'number' ? calculatedDamage : '');
+    const finalDamage = Math.ceil(typeof damage === 'number' ? damage : (typeof calculatedDamage === 'number' ? calculatedDamage : ''));
+
 
     let rangeDisplay = range;
     if (!rangeDisplay && rangeValue) {
