@@ -24,18 +24,20 @@ const METRIC_DEFINITIONS = [
     label: 'Precision Defense',
     soft: { abs: 2 },
     hard: { abs: 4 },
+
   },
   {
     id: 'ad',
     key: 'AD',
     label: 'Area Defense',
+
     soft: { abs: 2 },
     hard: { abs: 4 },
   },
   {
     id: 'check',
     key: 'Check',
-    label: 'Check Bonus',
+    label: 'To Hit Bonus',
     soft: { abs: 1 },
     hard: { abs: 2 },
   },
@@ -164,33 +166,13 @@ const evaluateAttributes = (actualStats, baselineStats, level) => {
   const totalDirection = totalDelta > 0 ? 'high' : totalDelta < 0 ? 'low' : 'ok';
   const maxDirection = maxDelta > 0 ? 'high' : maxDelta < 0 ? 'low' : 'ok';
 
-  const saveWarnings = [];
-  const actualSaves = actualStats?.Saves || {};
-  const baselineSaves = baselineStats?.Saves || {};
-
-  attributeKeys.forEach((attr) => {
-    const actual = actualSaves[attr];
-    const baseline = baselineSaves[attr];
-    if (typeof actual !== 'number' || typeof baseline !== 'number') {
-      return;
-    }
-    const delta = actual - baseline;
-    if (Math.abs(delta) > 1) {
-      saveWarnings.push({
-        attribute: `${attr} Save`,
-        delta,
-        baseline,
-        actual,
-        tone: Math.abs(delta) >= 3 ? 'critical' : 'warning',
-        direction: delta > 0 ? 'high' : 'low',
-        label: `${attr} Save`,
-      });
-    }
-  });
 
   return {
     total: {
+      id: 'attribute-total',
       actual: actualTotal,
+      baseline: expectedTotal,
+
       expected: expectedTotal,
       delta: totalDelta,
       tone: totalTone,
@@ -198,14 +180,16 @@ const evaluateAttributes = (actualStats, baselineStats, level) => {
       label: 'Attribute Total',
     },
     max: {
+
+      id: 'attribute-max',
       actual: actualMax,
+      baseline: expectedMax,
       expected: expectedMax,
       delta: maxDelta,
       tone: maxTone,
       direction: maxDirection,
       label: 'Highest Attribute',
     },
-    saveWarnings,
   };
 };
 
@@ -337,14 +321,6 @@ export const evaluateBalance = ({ inputs, selectedFeatures = [], creature }) => 
       } else if (summary.direction === 'low') {
         lowSignals.push(summary);
       }
-    }
-  });
-
-  attributeSummary.saveWarnings.forEach((warning) => {
-    if (warning.direction === 'high') {
-      highSignals.push(warning);
-    } else if (warning.direction === 'low') {
-      lowSignals.push(warning);
     }
   });
 

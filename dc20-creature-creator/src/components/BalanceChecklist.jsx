@@ -60,6 +60,76 @@ const BalanceChecklist = ({ report }) => {
   }
 
   const { metrics, featureCost, attributeSummary, attackCoverage, overall } = report;
+  const metricMap = Object.fromEntries(metrics.map((metric) => [metric.id, metric]));
+  const coreMetrics = [
+    metricMap.hp,
+    metricMap.pd,
+    metricMap.ad,
+    attributeSummary.total,
+    attributeSummary.max,
+  ].filter(Boolean);
+
+  const secondaryItems = [
+    { type: 'featureCost', data: featureCost },
+    metricMap.check,
+    metricMap.damage,
+    metricMap.savedc,
+    { type: 'coverage', data: attackCoverage },
+  ].filter(Boolean);
+
+  const renderMetricRow = (item) => {
+    if (!item) return null;
+    const tone = item.tone || 'ok';
+    return (
+      <div key={item.id || item.label} className={`checklist-row status-${tone}`}>
+        <span className={`status-badge status-${tone}`}>{toneToLabel(tone)}</span>
+        <div className="checklist-row-details">
+          <strong>{item.label}</strong>
+          <span>
+            {formatValue(item.actual)} vs baseline {formatValue(item.baseline ?? item.expected ?? '—')}
+            {buildMetricDeltaText(item)}
+            {item.direction !== 'ok' && tone !== 'ok' && ` — ${directionDescriptor(item.direction)} expectations.`}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSecondaryRow = (entry) => {
+    if (!entry) return null;
+    if (entry.type === 'featureCost') {
+      const data = entry.data;
+      const tone = data.tone || 'ok';
+      return (
+        <div key="feature-cost" className={`checklist-row status-${tone}`}>
+          <span className={`status-badge status-${tone}`}>{toneToLabel(tone)}</span>
+          <div className="checklist-row-details">
+            <strong>Feature Cost</strong>
+            <span>
+              Expected {data.budget.min}–{data.budget.max}, current {data.total}.
+              {data.direction !== 'ok' && ` This is ${directionDescriptor(data.direction)} the recommended range.`}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    if (entry.type === 'coverage') {
+      const data = entry.data;
+      const tone = data.tone || 'ok';
+      return (
+        <div key="attack-coverage" className={`checklist-row status-${tone}`}>
+          <span className={`status-badge status-${tone}`}>{toneToLabel(tone)}</span>
+          <div className="checklist-row-details">
+            <strong>PD & AD Coverage</strong>
+            <span>{data.message}</span>
+          </div>
+        </div>
+      );
+    }
+
+    return renderMetricRow(entry);
+  };
 
   return (
     <section className="balance-checklist">
@@ -75,85 +145,16 @@ const BalanceChecklist = ({ report }) => {
         )}
       </div>
 
-      <div className="checklist-section">
-        <h3>Feature Budget</h3>
-        <div className={`checklist-row status-${featureCost.tone}`}>
-          <span className={`status-badge status-${featureCost.tone}`}>{toneToLabel(featureCost.tone)}</span>
-          <div className="checklist-row-details">
-            <strong>Feature Cost</strong>
-            <span>
-              Expected {featureCost.budget.min}–{featureCost.budget.max}, current {featureCost.total}.
-              {featureCost.direction !== 'ok' && ` This is ${directionDescriptor(featureCost.direction)} the recommended range.`}
-            </span>
-          </div>
+
+      <div className="balance-checklist-columns">
+        <div className="balance-column">
+          <h3>Core Stats</h3>
+          {coreMetrics.map((metric) => renderMetricRow(metric))}
         </div>
-      </div>
+        <div className="balance-column">
+          <h3>Offense & Budget</h3>
+          {secondaryItems.map((item) => renderSecondaryRow(item))}
 
-      <div className="checklist-section">
-        <h3>Core Stats</h3>
-        {metrics.map((metric) => (
-          <div key={metric.id} className={`checklist-row status-${metric.tone}`}>
-            <span className={`status-badge status-${metric.tone}`}>{toneToLabel(metric.tone)}</span>
-            <div className="checklist-row-details">
-              <strong>{metric.label}</strong>
-              <span>
-                {formatValue(metric.actual)} vs baseline {formatValue(metric.baseline)}
-                {buildMetricDeltaText(metric)}
-                {metric.direction !== 'ok' && metric.tone !== 'ok' && ` — ${directionDescriptor(metric.direction)} of expectations.`}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="checklist-section">
-        <h3>Attributes & Saves</h3>
-        {[attributeSummary.total, attributeSummary.max].map((summary) => (
-          <div key={summary.label} className={`checklist-row status-${summary.tone}`}>
-            <span className={`status-badge status-${summary.tone}`}>{toneToLabel(summary.tone)}</span>
-            <div className="checklist-row-details">
-              <strong>{summary.label}</strong>
-              <span>
-                {formatValue(summary.actual)} vs expected {formatValue(summary.expected)}
-                {` (${formatDelta(summary.delta)})`}
-                {summary.direction !== 'ok' && summary.tone !== 'ok' && ` — ${directionDescriptor(summary.direction)} the level guideline.`}
-              </span>
-            </div>
-          </div>
-        ))}
-        {attributeSummary.saveWarnings.length > 0 ? (
-          attributeSummary.saveWarnings.map((warning) => (
-            <div key={warning.attribute} className={`checklist-row status-${warning.tone}`}>
-              <span className={`status-badge status-${warning.tone}`}>{toneToLabel(warning.tone)}</span>
-              <div className="checklist-row-details">
-                <strong>{warning.attribute}</strong>
-                <span>
-                  {formatValue(warning.actual)} vs baseline {formatValue(warning.baseline)}
-                  {` (${formatDelta(warning.delta)})`}
-                  {warning.direction !== 'ok' && ` — ${directionDescriptor(warning.direction)} proficiency.`}
-                </span>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="checklist-row status-ok">
-            <span className="status-badge status-ok">OK</span>
-            <div className="checklist-row-details">
-              <strong>Saves</strong>
-              <span>All tracked saves are within the expected range.</span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="checklist-section">
-        <h3>Attack Coverage</h3>
-        <div className={`checklist-row status-${attackCoverage.tone}`}>
-          <span className={`status-badge status-${attackCoverage.tone}`}>{toneToLabel(attackCoverage.tone)}</span>
-          <div className="checklist-row-details">
-            <strong>PD & AD Coverage</strong>
-            <span>{attackCoverage.message}</span>
-          </div>
         </div>
       </div>
     </section>
