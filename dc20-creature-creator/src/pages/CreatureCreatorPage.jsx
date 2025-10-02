@@ -4,6 +4,7 @@ import './CreatureCreatorPage.css';
 import RightBar from '../components/RightBar';
 import InputPanel from '../components/InputPanel';
 import StatBlockPanel from '../components/StatBlockPanel';
+import BalanceChecklist from '../components/BalanceChecklist';
 import {
   buildCreature,
   getDefaultCreatureState,
@@ -13,6 +14,7 @@ import {
   clearCreatureSession,
 } from '../domain/creatureBuilder';
 import { generateDefaultActionFeatures } from '../utils/calculateStats';
+import { evaluateBalance } from '../utils/balanceGuidelines';
 import { db } from '../firebase';
 import { collection, query, getDocs, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import html2canvas from 'html2canvas';
@@ -79,6 +81,19 @@ const CreatureCreatorPage = ({ currentUser }) => {
     [inputs, selectedFeatures, overrides, actionOverrides]
   );
   const statBlock = creatureBuild.creature;
+
+  const balanceReport = useMemo(() => {
+    if (!creatureBuild?.creature) {
+      return null;
+    }
+    return evaluateBalance({
+      inputs,
+      selectedFeatures,
+      overrides,
+      actionOverrides,
+      creature: creatureBuild.creature,
+    });
+  }, [inputs, selectedFeatures, overrides, actionOverrides, creatureBuild]);
 
   useEffect(() => {
     saveCreatureToSession(creatureState);
@@ -382,15 +397,18 @@ const CreatureCreatorPage = ({ currentUser }) => {
           onAddCustomFeatureToSelection={handleAddCustomFeatureToSelection}
           onSaveCustomFeatureToDBAndAddToSelection={handleSaveCustomFeatureToDBAndAddToSelection}
         />
-        <StatBlockPanel
-          ref={statBlockRef}
-          fullStatBlock={statBlock}
-          onStatOverride={handleStatOverride}
-          onRemoveFeature={handleRemoveSelectedFeature}
-          onActionUpdate={handleActionUpdate}
-          onDefaultActionUpdate={handleDefaultActionUpdate}
-          generatedDefaultActions={generatedDefaultActions}
-        />
+        <div className="middle-column">
+          <StatBlockPanel
+            ref={statBlockRef}
+            fullStatBlock={statBlock}
+            onStatOverride={handleStatOverride}
+            onRemoveFeature={handleRemoveSelectedFeature}
+            onActionUpdate={handleActionUpdate}
+            onDefaultActionUpdate={handleDefaultActionUpdate}
+            generatedDefaultActions={generatedDefaultActions}
+          />
+          <BalanceChecklist report={balanceReport} />
+        </div>
         <RightBar onCreateNew={handleCreateNew} onSave={handleSave} onExport={handleExport} />
       </div>
     </>

@@ -25,6 +25,7 @@ const mapActionFeature = (feature) => ({
   baseDamageOverride: feature.baseDamageOverride,
   descriptionCore: feature.descriptionCore,
   originalFeatureId: feature.id || feature.originalFeatureId,
+  balanceCost: feature.balanceCost,
 });
 
 const mapEnhancementFeature = (feature) => ({
@@ -39,6 +40,7 @@ const mapEnhancementFeature = (feature) => ({
   conditionApplied: feature.conditionApplied,
   conditionDuration: feature.conditionDuration,
   originalFeatureId: feature.id || feature.originalFeatureId,
+  balanceCost: feature.balanceCost,
 });
 
 export const applyFeatureEffects = (stats, selectedFeatures = []) => {
