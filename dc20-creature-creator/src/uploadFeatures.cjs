@@ -18,7 +18,7 @@ try {
 
 const db = admin.firestore();
 
-const allCreatureFeatures = [
+const rawCreatureFeatures = [
     // --- PASSIVE FEATURES (for ABILITIES section) ---
     {
         id: "undead_deaths_door",
@@ -435,6 +435,17 @@ const allCreatureFeatures = [
         conditionDuration: "1 round",
     },
 ];
+
+const allCreatureFeatures = rawCreatureFeatures.map((feature) => {
+    const numericCost =
+        typeof feature.balanceCost === 'number' && Number.isFinite(feature.balanceCost)
+            ? Math.max(0, feature.balanceCost)
+            : 1;
+    return {
+        ...feature,
+        balanceCost: numericCost,
+    };
+});
 
 async function uploadFeatures() {
     const featuresCollection = db.collection('features');

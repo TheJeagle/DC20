@@ -42,6 +42,12 @@
     color: #777;
 }
 
+.feature-balance-cost {
+    font-size: 0.85em;
+    margin-left: 8px;
+    color: #555;
+}
+
 .feature-description {
     /* Style if you keep the <p> description visible */
     font-size: 0.9em;

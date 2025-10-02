@@ -55,6 +55,7 @@ const FeatureCreationForm = ({ onCancel, onAddOnlyToCreature, onSaveAndAddToCrea
     const [costAP, setCostAP] = useState(''); // Use string for empty input, parse to number later
     const [costMP, setCostMP] = useState('');
     const [costSP, setCostSP] = useState('');
+    const [balanceCost, setBalanceCost] = useState('1');
     const [actionType, setActionType] = useState('');
     const [damageMod, setDamageMod] = useState('');
     const [damageType, setDamageType] = useState('');
@@ -81,6 +82,7 @@ const FeatureCreationForm = ({ onCancel, onAddOnlyToCreature, onSaveAndAddToCrea
     const resetForm = () => {
         setName(''); setCategory('feature'); setDescription(''); setTags('');
         setCostAP(''); setCostMP(''); setCostSP('');
+        setBalanceCost('1');
         setActionType(''); setDamageMod(''); setDamageType(''); setRange('');
         setTargets(''); setDuration(''); setSaveAttribute(''); setSaveEffect('');
         setConditionApplied(''); setHealingAmount('');
@@ -91,6 +93,8 @@ const FeatureCreationForm = ({ onCancel, onAddOnlyToCreature, onSaveAndAddToCrea
         const numAP = parseInt(costAP, 10) || 0;
         const numMP = parseInt(costMP, 10) || 0;
         const numSP = parseInt(costSP, 10) || 0;
+        const parsedBalanceCost = parseFloat(balanceCost);
+        const numericBalanceCost = Number.isNaN(parsedBalanceCost) ? 1 : Math.max(0, parsedBalanceCost);
 
         if (numAP > 0) costStringParts.push(`${numAP} AP`);
         if (numMP > 0) costStringParts.push(`${numMP} MP`);
@@ -121,6 +125,7 @@ const FeatureCreationForm = ({ onCancel, onAddOnlyToCreature, onSaveAndAddToCrea
             saveEffect: saveAttribute ? saveEffect.trim() : null, // Only relevant if there's a save
             conditionApplied: conditionApplied.trim() || null,
             healingAmount: (category === 'action' && actionType === 'Healing') ? healingAmount.trim() : null,
+            balanceCost: numericBalanceCost,
         };
     };
 
@@ -180,6 +185,19 @@ const FeatureCreationForm = ({ onCancel, onAddOnlyToCreature, onSaveAndAddToCrea
             <div className="form-group">
                 <label htmlFor="customFeatureDesc">Description:</label>
                 <textarea id="customFeatureDesc" value={description} onChange={e => setDescription(e.target.value)} rows="3" placeholder="What this trait does..."></textarea>
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="customFeatureBalanceCost">Balance Cost:</label>
+                <input
+                    type="number"
+                    id="customFeatureBalanceCost"
+                    min="0"
+                    step="0.5"
+                    value={balanceCost}
+                    onChange={(e) => setBalanceCost(e.target.value)}
+                />
+                <small className="form-helper-text">Set to 1 for a standard-strength feature. Increase the value for stronger effects.</small>
             </div>
 
             {/* --- Cost Inputs --- */}
