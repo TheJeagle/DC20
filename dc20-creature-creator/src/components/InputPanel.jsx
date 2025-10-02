@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import './InputPanel.css';
 import FeatureCreationForm from './FeatureCreationForm';
+import { normalizeFeatureBalanceCost } from '../utils/featureCost';
 
 const InputPanel = ({
   inputs,
@@ -71,6 +72,8 @@ const InputPanel = ({
             return null;
           }
           const isChecked = selectedFeatures.some((sf) => sf.id === feature.id);
+          const normalizedBalance = normalizeFeatureBalanceCost(feature);
+          const displayBalance = Number.isInteger(normalizedBalance) ? normalizedBalance : normalizedBalance.toFixed(1);
           return (
             <li key={`${listContextKey}-${feature.id}`}>
               <label title={feature.description}>
@@ -78,6 +81,7 @@ const InputPanel = ({
                 <strong className="feature-name">{feature.name}</strong>
                 <span className="feature-category">({feature.category})</span>
                 {feature.cost && <span className="feature-cost"> - Cost: {feature.cost}</span>}
+                <span className="feature-balance-cost">• Feature Cost: {displayBalance}</span>
               </label>
             </li>
           );

@@ -31,17 +31,29 @@ body {
 }
 
 .stat-block-panel {
-  flex: 2;
-  /* Takes 2 parts of the available space */
   background-color: var(--bg-light-panel, #fff);
   color: var(--text-color-dark, #000);
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-width: 0;
+  width: 100%;
+}
+
+.middle-column {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
   min-width: 400px;
-  /* Give it a decent minimum width */
-  overflow-y: auto;
-  /* Allow scrolling */
+}
+
+.middle-column .stat-block-panel {
+  flex: 0 0 auto;
+}
+
+.middle-column .balance-checklist {
+  flex: 0 0 auto;
 }
 
 /* RightBar is now a flex item, its own CSS (.right-bar) will define its specific flex properties if needed */
