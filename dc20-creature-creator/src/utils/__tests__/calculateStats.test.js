@@ -45,13 +45,14 @@ describe('calculateCreatureStats', () => {
 
     const action = {
       name: 'Fiery Strike',
-      kind: 'action',
+      category: 'action',
       method: 'Melee Spell Attack',
       cost: { ap: 1 },
-      damage: { bonus: 2, type: 'fire', base: null },
-      save: { attribute: 'Mig', dcMod: 2, effect: '' },
+      damage: { modifier: 2, type: 'fire' },
+      save: 'Might',
+      saveDCMod: 2,
       defense: 'PD',
-      range: 'melee',
+      range: 1,
       target: '1 creature',
       summary: 'Strike with fire.'
     };
@@ -59,7 +60,8 @@ describe('calculateCreatureStats', () => {
     const result = calculateCreatureStats(inputs, [action], {});
     const displayAttack = result.display.Combat.Attacks.find(a => a.name.startsWith('Fiery Strike'));
     expect(displayAttack).toBeDefined();
-    expect(displayAttack.details).toContain('4 fire damage vs PD.');
+    expect(displayAttack.details).toContain('base damage +2 fire vs PD.');
+    expect(displayAttack.details).toContain('Target 1 creature within 1 spaces.');
     expect(displayAttack.details).toContain('DC 16');
 
   });
@@ -78,7 +80,7 @@ describe('calculateCreatureStats', () => {
       0: {
         damage: 8,
         name: 'Custom Attack',
-        details: '8 physical damage vs PD. Target 1 creature within 1 space.'
+        summary: '8 physical damage vs PD. Target 1 creature within 1 space.'
       }
     };
 
@@ -103,11 +105,11 @@ describe('calculateCreatureStats', () => {
     const apexAction = {
       id: 'apex_test_action',
       name: 'Tail Sweep',
-      kind: 'apex_action',
+      category: 'apex_action',
       cost: { ap: 1 },
       summary: 'Swipe your tail at a foe.',
       method: 'Melee Attack',
-      range: 'melee',
+      range: 1,
       target: '1 creature'
     };
 

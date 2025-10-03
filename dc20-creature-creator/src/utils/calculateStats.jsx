@@ -4,8 +4,8 @@ import { applyDefaultActionOverrides, applyUserOverrides } from './overrideAppli
 import { formatForPresentation } from './presentationFormatter';
 
 const isAttackAction = (action) => {
-  if (!action || typeof action.actionType !== 'string') return false;
-  const type = action.actionType.toLowerCase();
+  if (!action) return false;
+  const type = (action.method || action.actionType || '').toLowerCase();
   return type.includes('attack') || type.includes('spell');
 };
 
@@ -13,21 +13,34 @@ const enhanceActionData = (rawStats, actions = []) =>
   actions.map((action) => {
     const calculatedDamage = (() => {
       if (typeof action.baseDamageOverride === 'number') {
-        return action.baseDamageOverride + (action.damageMod || 0);
+        return action.baseDamageOverride + ((action.damage && action.damage.modifier) || action.damageMod || 0);
       }
       if (!isAttackAction(action)) {
         return 0;
       }
-      return rawStats.Damage + (action.damageMod || 0);
+      const modifier = (action.damage && action.damage.modifier) || action.damageMod || 0;
+      return rawStats.Damage + modifier;
     })();
 
     const calculatedSaveDC = rawStats.SaveDC + (action.saveDCMod || 0);
 
-    const costParts = [];
-    if (action.costAP > 0) costParts.push(`${action.costAP} AP`);
-    if (action.costMP > 0) costParts.push(`${action.costMP} MP`);
+    const buildCostParts = () => {
+      if (action.cost && typeof action.cost === 'object') {
+        return Object.entries(action.cost)
+          .filter(([, amount]) => amount > 0)
+          .map(([resource, amount]) => `${amount} ${resource.toUpperCase()}`);
+      }
+      const parts = [];
+      if (action.costAP > 0) parts.push(`${action.costAP} AP`);
+      if (action.costMP > 0) parts.push(`${action.costMP} MP`);
+      if (action.costSP > 0) parts.push(`${action.costSP} SP`);
+      return parts;
+    };
+
+    const costParts = buildCostParts();
+    const isReaction = (action.category && action.category === 'reaction') || (action.kind && action.kind === 'reaction');
     const displayCost =
-      action.category === 'reaction' && costParts.length === 0
+      isReaction && costParts.length === 0
         ? 'Reaction'
         : costParts.join(' + ') || 'Free';
 
@@ -37,7 +50,7 @@ const enhanceActionData = (rawStats, actions = []) =>
       calculatedDamage: Math.ceil(calculatedDamage),
       calculatedSaveDC,
       displayCost,
-      description: action.description,
+      description: action.summary || action.description,
       isAttack: isAttackAction(action),
     };
   });
@@ -46,35 +59,63 @@ const enhanceEnhancements = (rawStats, enhancements = []) =>
   enhancements.map((enh) => ({
     ...enh,
     calculatedSaveDC: rawStats.SaveDC + (enh.saveDCMod || 0),
-    cost:
-      enh.costAP > 0
-        ? `+${enh.costAP} AP`
-        : enh.costMP > 0
-        ? `+${enh.costMP} MP`
-        : 'Special',
+    cost: (() => {
+      if (enh.cost && typeof enh.cost === 'object') {
+        const parts = Object.entries(enh.cost)
+          .filter(([, amount]) => amount > 0)
+          .map(([resource, amount]) => `+${amount} ${resource.toUpperCase()}`);
+        return parts.join(', ') || 'Special';
+      }
+      if (enh.costAP > 0) return `+${enh.costAP} AP`;
+      if (enh.costMP > 0) return `+${enh.costMP} MP`;
+      if (enh.costSP > 0) return `+${enh.costSP} SP`;
+      return 'Special';
+    })(),
   }));
 
 const enhanceReactions = (reactions = []) =>
   reactions.map((reaction) => ({
     ...reaction,
-    displayCost: reaction.costAP > 0 ? `${reaction.costAP} AP` : 'Reaction',
+    displayCost: (() => {
+      if (reaction.cost && typeof reaction.cost === 'object') {
+        const parts = Object.entries(reaction.cost)
+          .filter(([, amount]) => amount > 0)
+          .map(([resource, amount]) => `${amount} ${resource.toUpperCase()}`);
+        return parts.join(', ') || 'Reaction';
+      }
+      if (reaction.costAP > 0) return `${reaction.costAP} AP`;
+      if (reaction.costMP > 0) return `${reaction.costMP} MP`;
+      return 'Reaction';
+    })(),
   }));
 
 const enhanceApexActions = (rawStats, actions = []) =>
   actions.map((action) => {
     const calculatedDamage = (() => {
       if (typeof action.baseDamageOverride === 'number') {
-        return action.baseDamageOverride + (action.damageMod || 0);
+        return action.baseDamageOverride + ((action.damage && action.damage.modifier) || action.damageMod || 0);
       }
       if (!isAttackAction(action)) {
         return 0;
       }
-      return rawStats.Damage + (action.damageMod || 0);
+      const modifier = (action.damage && action.damage.modifier) || action.damageMod || 0;
+      return rawStats.Damage + modifier;
     })();
 
-    const costParts = [];
-    if (action.costAP > 0) costParts.push(`${action.costAP} AP`);
-    if (action.costMP > 0) costParts.push(`${action.costMP} MP`);
+    const buildCostParts = () => {
+      if (action.cost && typeof action.cost === 'object') {
+        return Object.entries(action.cost)
+          .filter(([, amount]) => amount > 0)
+          .map(([resource, amount]) => `${amount} ${resource.toUpperCase()}`);
+      }
+      const parts = [];
+      if (action.costAP > 0) parts.push(`${action.costAP} AP`);
+      if (action.costMP > 0) parts.push(`${action.costMP} MP`);
+      if (action.costSP > 0) parts.push(`${action.costSP} SP`);
+      return parts;
+    };
+
+    const costParts = buildCostParts();
     const displayCost = costParts.join(' + ') || 'Free';
 
     return {
@@ -82,7 +123,7 @@ const enhanceApexActions = (rawStats, actions = []) =>
       damage: Math.ceil(calculatedDamage),
       calculatedSaveDC: rawStats.SaveDC + (action.saveDCMod || 0),
       displayCost,
-      description: action.description,
+      description: action.summary || action.description,
     };
   });
 
@@ -143,50 +184,62 @@ export const generateDefaultActionFeatures = (inputs) => {
 
   const describeAttack = (attack) => {
     const parts = [];
-    if (attack.damage) {
-      const defense = attack.targetsDefense ? ` vs ${attack.targetsDefense}` : '';
-      parts.push(`${attack.damage} ${attack.damageType || 'damage'} damage${defense}.`);
+    const damageInfo = typeof attack.damage === 'object' ? attack.damage : null;
+    if (damageInfo || typeof attack.damage === 'number' || typeof attack.damageMod === 'number') {
+      const damageType = (damageInfo && damageInfo.type) || attack.damageType || 'damage';
+      const modifierSource = damageInfo && typeof damageInfo.modifier === 'number'
+        ? damageInfo.modifier
+        : attack.damageMod || 0;
+      const modifier = typeof modifierSource === 'number' ? modifierSource : 0;
+      const defense = attack.defense || attack.targetsDefense;
+      const modifierText = modifier >= 0 ? `+${modifier}` : modifier;
+      const defenseText = defense ? ` vs ${defense}` : '';
+      parts.push(`base damage ${modifierText} ${damageType}${defenseText}.`);
     }
-    if (attack.targetDescription) {
-      const range = attack.range ? ` within ${attack.range}` : '';
-      parts.push(`Target ${attack.targetDescription}${range}.`);
+    if (attack.target || attack.targetDescription) {
+      const targetText = attack.target || attack.targetDescription;
+      const parsedRange = (() => {
+        if (typeof attack.range === 'number') return attack.range;
+        if (typeof attack.range === 'string') {
+          const match = attack.range.match(/(\d+)/);
+          if (match) return parseInt(match[1], 10);
+        }
+        return null;
+      })();
+      const rangeText = (() => {
+        if (parsedRange !== null && parsedRange > 0) return ` within ${parsedRange} spaces`;
+        if ((parsedRange === null || parsedRange === 0) && (attack.defense === 'AD' || attack.targetsDefense === 'AD')) return ' around yourself';
+        return '';
+      })();
+      parts.push(`Target ${targetText}${rangeText}.`);
     }
     return parts.join(' ');
   };
 
-  const parseRange = (rangeStr) => {
-    if (!rangeStr) return { rangeValue: 0, rangeUnit: '' };
-    const match = rangeStr.match(/(\d+)\s*(\w+)/);
-    if (match) {
-      return { rangeValue: parseInt(match[1], 10), rangeUnit: match[2].replace(/s$/, '') };
-    }
-    return { rangeValue: 0, rangeUnit: rangeStr };
-  };
-
   return defaultAttacks.map((attack, idx) => {
-    const { rangeValue, rangeUnit } = parseRange(attack.range);
-    const cost = attack.costAP > 0 ? { ap: attack.costAP } : {};
     return {
       id: `default-${idx}`,
       name: attack.name,
-      kind: 'action',
+      category: 'action',
       method: attack.type ? `${attack.type} Attack` : '',
-      cost,
-      damage: {
-        bonus: 0,
-        type: attack.damageType,
-        base: attack.damage,
-      },
-      defense: attack.targetsDefense,
-      range: rangeValue > 0 ? `${rangeValue} ${rangeUnit}`.trim() : attack.range,
-      target: attack.targetDescription,
+      cost: attack.cost
+        ? { ...attack.cost }
+        : attack.costAP
+        ? { ap: attack.costAP }
+        : null,
+      damage: attack.damage || { modifier: attack.damageMod || 0, type: attack.damageType },
+      defense: attack.defense || attack.targetsDefense,
+      range: (() => {
+        if (typeof attack.range === 'number') return attack.range;
+        if (typeof attack.range === 'string') {
+          const match = attack.range.match(/(\d+)/);
+          if (match) return parseInt(match[1], 10);
+        }
+        return undefined;
+      })(),
+      target: attack.target || attack.targetDescription,
       summary: describeAttack(attack),
-      save: {
-        attribute: '',
-        dcMod: 0,
-        effect: '',
-      },
-      tags: ['default'],
+      baseDamageOverride: attack.damage,
     };
   });
 };

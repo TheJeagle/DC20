@@ -20,20 +20,42 @@ const formatAttributeWithSave = (attributeValue, saveValue) => {
 
 const createAttackDescription = (attack, extra) => {
   const parts = [];
-  if (attack.damage) {
-    const damageType = attack.damageType || 'damage';
-    const defense = attack.targetsDefense ? ` vs ${attack.targetsDefense}` : '';
-    parts.push(`${attack.damage} ${damageType} damage${defense}.`);
+  const damageInfo = attack.damage && typeof attack.damage === 'object' ? attack.damage : null;
+  if (damageInfo || typeof attack.damage === 'number' || typeof attack.damageMod === 'number') {
+    const damageType = (damageInfo && damageInfo.type) || attack.damageType || 'damage';
+    const modifierSource = damageInfo && typeof damageInfo.modifier === 'number'
+      ? damageInfo.modifier
+      : attack.damageMod || 0;
+    const modifier = typeof modifierSource === 'number' ? modifierSource : 0;
+    const defense = attack.defense || attack.targetsDefense;
+    const modifierText = modifier >= 0 ? `+${modifier}` : modifier;
+    const defenseText = defense ? ` vs ${defense}` : '';
+    parts.push(`base damage ${modifierText} ${damageType}${defenseText}.`);
   }
 
-  if (attack.targetDescription) {
-    const range = attack.range ? ` within ${attack.range}` : '';
-    parts.push(`Target ${attack.targetDescription}${range}.`);
+  if (attack.target || attack.targetDescription) {
+    const targetText = attack.target || attack.targetDescription;
+    const parsedRange = (() => {
+      if (typeof attack.range === 'number') return attack.range;
+      if (typeof attack.range === 'string') {
+        const match = attack.range.match(/(\d+)/);
+        if (match) return parseInt(match[1], 10);
+      }
+      if (typeof attack.rangeValue === 'number') return attack.rangeValue;
+      return null;
+    })();
+    const rangeText = (() => {
+      if (parsedRange !== null && parsedRange > 0) return ` within ${parsedRange} spaces`;
+      if ((parsedRange === null || parsedRange === 0) && (attack.defense === 'AD' || attack.targetsDefense === 'AD')) return ' around yourself';
+      return '';
+    })();
+    parts.push(`Target ${targetText}${rangeText}.`);
   }
 
-  if (extra?.saveAttribute) {
+  const saveAttribute = extra?.save || extra?.saveAttribute;
+  if (saveAttribute) {
     const saveDC = extra.calculatedSaveDC;
-    let saveText = `Target makes a ${extra.saveAttribute} save (DC ${saveDC})`;
+    let saveText = `Target makes a ${saveAttribute} save (DC ${saveDC})`;
     if (extra.conditionApplied) {
       saveText += ` or becomes ${extra.conditionApplied}`;
       if (extra.conditionDuration) {
@@ -59,20 +81,58 @@ const createAttackDescription = (attack, extra) => {
     );
   }
 
-  if (extra?.description) {
-    parts.push(extra.description);
+  const summary = extra?.summary || attack.summary || extra?.description || attack.description;
+  if (summary) {
+    parts.push(summary);
   }
 
   return parts.filter(Boolean).join(' ');
 };
 
-const formatAttackDisplay = (attack, extras = {}) => ({
-  name: attack.name,
-  costAP: attack.costAP || 0,
-  costMP: attack.costMP || 0,
-  details: createAttackDescription(attack, extras),
-  originalFeatureId: attack.originalFeatureId || null,
-});
+const buildCostObject = (attack) => {
+  if (attack.cost && typeof attack.cost === 'object') {
+    return attack.cost;
+  }
+  const cost = {};
+  if (attack.costAP > 0) cost.ap = attack.costAP;
+  if (attack.costMP > 0) cost.mp = attack.costMP;
+  if (attack.costSP > 0) cost.sp = attack.costSP;
+  return Object.keys(cost).length > 0 ? cost : null;
+};
+
+const parseRangeValue = (attack) => {
+  if (typeof attack.range === 'number') return attack.range;
+  if (typeof attack.rangeValue === 'number') return attack.rangeValue;
+  if (typeof attack.range === 'string') {
+    const match = attack.range.match(/(\d+)/);
+    if (match) return parseInt(match[1], 10);
+  }
+  return undefined;
+};
+
+const formatAttackDisplay = (attack, extras = {}) => {
+  const cost = buildCostObject(attack);
+  const damage = attack.damage && typeof attack.damage === 'object'
+    ? attack.damage
+    : {
+        modifier: attack.damageMod || 0,
+        type: attack.damageType,
+      };
+  return {
+    name: attack.name,
+    cost,
+    costAP: attack.costAP || 0,
+    costMP: attack.costMP || 0,
+    costSP: attack.costSP || 0,
+    details: createAttackDescription(attack, extras),
+    originalFeatureId: attack.originalFeatureId || null,
+    damage,
+    defense: attack.defense || attack.targetsDefense || null,
+    range: parseRangeValue(attack),
+    target: attack.target || attack.targetDescription || null,
+    summary: extras.summary || attack.summary || extras.description || attack.description || '',
+  };
+};
 
 export const formatForPresentation = (raw, derived) => {
   const display = {
