@@ -21,20 +21,17 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
         rangeUnit,
         summary,
         details = '',
-        category,
-        kind,
     } = action;
 
     const resolvedDamageType = damage?.type || damageType || 'damage';
-    const resolvedDefense = defense || targetsDefense || 'PD';
-    const finalDamage = (() => {
-        if (typeof calculatedDamage === 'number') return Math.ceil(calculatedDamage);
-        if (typeof damage?.total === 'number') return Math.ceil(damage.total);
-        if (typeof damage?.base === 'number') return Math.ceil(damage.base + (damage.modifier || 0));
-        if (typeof damage === 'number') return Math.ceil(damage);
-        return '';
+    const damageModifier = (() => {
+        if (typeof damage?.modifier === 'number') return damage.modifier;
+        if (typeof damage?.modifier === 'string') return damage.modifier;
+        if (typeof action.damageMod === 'number') return action.damageMod;
+        if (typeof action.damageMod === 'string') return action.damageMod;
+        return 0;
     })();
-
+    const resolvedDefense = defense || targetsDefense || 'PD';
     const rangeDisplay = (() => {
         if (typeof range === 'string') return range;
         if (range && typeof range === 'object') return range.text || `${range.value || ''} ${range.unit || ''}`.trim();
@@ -129,7 +126,7 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
             <strong>{renderCost()}</strong>
             ):
             {' '}
-            base damage {damageModifier >= 0 ? '+' : ''}
+            base damage {Number(damageModifier) >= 0 ? '+' : ''}
             <EditableField
                 value={damageModifier}
                 onSave={(f, val) => handleSave('damage.modifier', val)}
@@ -182,7 +179,7 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
                 <>
                     <br />
                     <EditableField
-                        value={summaryText}
+                        value={summary || ''}
                         onSave={(f, val) => handleSave('summary', val)}
                         fieldType="text"
                         className="editable-description-field"
