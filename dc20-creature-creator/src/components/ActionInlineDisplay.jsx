@@ -53,6 +53,40 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
         if (onSaveField) onSaveField(field, value);
     };
 
+    const parseCostString = (value) => {
+        const result = {};
+        if (!value) return result;
+
+        const normalized = value.trim();
+        if (!normalized) return result;
+
+        const apMatch = normalized.match(/(\d+)\s*AP\b/i);
+        const mpMatch = normalized.match(/(\d+)\s*MP\b/i);
+        const spMatch = normalized.match(/(\d+)\s*SP\b/i);
+
+        if (apMatch) result.ap = parseInt(apMatch[1], 10);
+        if (mpMatch) result.mp = parseInt(mpMatch[1], 10);
+        if (spMatch) result.sp = parseInt(spMatch[1], 10);
+
+        const remainder = normalized
+            .replace(/(\d+)\s*AP\b/gi, '')
+            .replace(/(\d+)\s*MP\b/gi, '')
+            .replace(/(\d+)\s*SP\b/gi, '')
+            .replace(/\+/g, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+
+        if (remainder) {
+            if (!('ap' in result) && !('mp' in result) && !('sp' in result)) {
+                result.summary = remainder;
+            } else {
+                result.special = remainder;
+            }
+        }
+
+        return result;
+    };
+
     const renderCost = () => {
         const ap = typeof cost.ap === 'number' ? cost.ap : action.costAP || 0;
         const mp = typeof cost.mp === 'number' ? cost.mp : action.costMP || 0;
@@ -66,21 +100,6 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
         if (sp > 0) parts.push(`${sp} SP`);
         if (cost.special) parts.push(cost.special);
         const costString = parts.join(' + ');
-
-        const onCostSave = (field, val) => {
-            const apMatch = val.match(/(\d+)\s*AP/i);
-            const mpMatch = val.match(/(\d+)\s*MP/i);
-            const spMatch = val.match(/(\d+)\s*SP/i);
-            const parsedAP = apMatch ? parseInt(apMatch[1], 10) : 0;
-            const parsedMP = mpMatch ? parseInt(mpMatch[1], 10) : 0;
-            const parsedSP = spMatch ? parseInt(spMatch[1], 10) : 0;
-            if (onSaveField) {
-                onSaveField('cost.ap', parsedAP);
-                onSaveField('cost.mp', parsedMP);
-                onSaveField('cost.sp', parsedSP);
-            }
-            return result;
-        };
 
         const onCostSave = (field, val) => {
             if (!onSaveField) return;
