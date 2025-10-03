@@ -226,7 +226,9 @@ export const applyFeatureEffects = (stats, selectedFeatures = []) => {
   selectedFeatures.forEach((feature) => {
     if (!feature || typeof feature !== 'object') return;
 
-    if (feature.category === 'feature' && Array.isArray(feature.effects)) {
+    const kind = getFeatureKind(feature);
+
+    if (kind === 'feature' && Array.isArray(feature.effects)) {
       feature.effects.forEach((effect) => {
         const { stat, change, value } = effect || {};
 
@@ -277,17 +279,18 @@ export const applyFeatureEffects = (stats, selectedFeatures = []) => {
     const {
       id,
       name,
-      category,
       value,
       displayValue,
       originalFeatureId,
     } = feature;
 
-    switch (category) {
+    const kind = getFeatureKind(feature);
+
+    switch (kind) {
       case 'feature':
         working.Features.push({
           name,
-          description: feature.descriptionCore || feature.description,
+          description: feature.summary || feature.descriptionCore || feature.description,
           originalFeatureId: id || originalFeatureId,
         });
         break;

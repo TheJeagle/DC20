@@ -1,18 +1,17 @@
 // src/components/FeatureCreationForm.jsx
 import React, { useState, useEffect } from 'react';
-import './FeatureCreationForm.css'; // Make sure to create/style this
+import './FeatureCreationForm.css';
 
-const FEATURE_CATEGORIES = [
-    { id: 'feature', label: 'Passive Feature' },
-    { id: 'action', label: 'Action' },
-    { id: 'attack_enhancement', label: 'Attack Enhancement' },
-    { id: 'reaction', label: 'Reaction' },
-    // Consider adding 'sense', 'resistance', 'immunity', 'language' if users *can* create these.
-    // If not, keep them as admin-created only. For now, I'll stick to your core list.
+const FEATURE_KINDS = [
+  { id: 'feature', label: 'Passive Feature' },
+  { id: 'action', label: 'Action' },
+  { id: 'attack_enhancement', label: 'Attack Enhancement' },
+  { id: 'reaction', label: 'Reaction' },
 ];
 
-const ACTION_TYPES = [
-    { id: '', label: 'Select Action Type...' },
+
+const METHOD_OPTIONS = [
+    { id: '', label: 'Select Method...' },
     { id: 'Melee Martial Attack', label: 'Melee Martial Attack' },
     { id: 'Ranged Martial Attack', label: 'Ranged Martial Attack' },
     { id: 'Melee Spell Attack', label: 'Melee Spell Attack' },
@@ -21,30 +20,34 @@ const ACTION_TYPES = [
     { id: 'Debuff', label: 'Debuff' },
     { id: 'Healing', label: 'Healing' },
     { id: 'Utility', label: 'Utility' },
-    // Add more specific action types as needed
 ];
 
 const SAVE_ATTRIBUTES = [
     { id: '', label: 'None' },
-    { id: 'Mig', label: 'Might (Mig)' },
-    { id: 'Agi', label: 'Agility (Agi)' },
-    { id: 'Int', label: 'Intelligence (Int)' },
-    { id: 'Cha', label: 'Charisma (Cha)' },
-    // Consider adding PD/AD if an effect can directly target these for non-damage effects
+    { id: 'Might', label: 'Might' },
+    { id: 'Agility', label: 'Agility' },
+    { id: 'Intelligence', label: 'Intelligence' },
+    { id: 'Charisma', label: 'Charisma' },
+    { id: 'Physical', label: 'Physical' },
+    { id: 'Mental', label: 'Mental' },
+
 ];
 
 const DURATIONS = [
-    { id: '', label: 'Instant / Until Triggered / Special' },
-    { id: 'end of your next turn', label: "End of your next turn" },
-    { id: 'start of your next turn', label: "Start of your next turn" },
-    { id: 'end of its next turn', label: "End of target's next turn" }, // 'its' refers to target
-    { id: 'start of its next turn', label: "Start of target's next turn" },
-    { id: '1 round', label: "1 Round" },
-    { id: '1 minute', label: "1 Minute" },
-    { id: '1 minute (target saves each turn)', label: "1 Minute (target saves each turn)" },
-    // Add more standard durations
+  { id: '', label: 'Instant / Until Triggered / Special' },
+  { id: 'end of your next turn', label: 'End of your next turn' },
+  { id: 'start of your next turn', label: 'Start of your next turn' },
+  { id: 'end of its next turn', label: "End of target's next turn" },
+  { id: 'start of its next turn', label: "Start of target's next turn" },
+  { id: '1 round', label: '1 Round' },
+  { id: '1 minute', label: '1 Minute' },
+  { id: '1 minute (target saves each turn)', label: '1 Minute (target saves each turn)' },
 ];
 
+const parseNumberOrZero = (value) => {
+  const parsed = parseInt(value, 10);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
 
 const FeatureCreationForm = ({ onCancel, onAddOnlyToCreature, onSaveAndAddToCreature }) => {
     // --- Form State ---
@@ -52,152 +55,405 @@ const FeatureCreationForm = ({ onCancel, onAddOnlyToCreature, onSaveAndAddToCrea
     const [category, setCategory] = useState('feature');
     const [description, setDescription] = useState('');
     const [tags, setTags] = useState(''); // Comma-separated
-    const [costAP, setCostAP] = useState(''); // Use string for empty input, parse to number later
-    const [costMP, setCostMP] = useState('');
-    const [costSP, setCostSP] = useState('');
+    const [costInputs, setCostInputs] = useState({ ap: '', mp: '', sp: '' });
     const [balanceCost, setBalanceCost] = useState('1');
-    const [actionType, setActionType] = useState('');
+    const [method, setMethod] = useState('Passive');
     const [damageMod, setDamageMod] = useState('');
     const [damageType, setDamageType] = useState('');
     const [range, setRange] = useState('');
-    const [targets, setTargets] = useState('');
+    const [target, setTarget] = useState('');
+    const [defense, setDefense] = useState('');
     const [duration, setDuration] = useState('');
     const [saveAttribute, setSaveAttribute] = useState('');
     const [saveEffect, setSaveEffect] = useState('');
     const [conditionApplied, setConditionApplied] = useState('');
     const [healingAmount, setHealingAmount] = useState('');
+    const [trigger, setTrigger] = useState('');
 
     // Reset fields when category changes to prevent carrying over irrelevant data
     useEffect(() => {
-        setActionType('');
-        setDamageMod(''); setDamageType(''); setRange(''); setTargets('');
+        setMethod(category === 'feature' ? 'Passive' : '');
+        setDamageMod('');
+        setDamageType('');
+        setRange('');
+        setTarget('');
+        setDefense('');
         setHealingAmount('');
-        // Keep AP/MP/SP if switching between action-like categories
         if (category === 'feature') {
-            setCostAP(''); setCostMP(''); setCostSP('');
-            setSaveAttribute(''); setSaveEffect(''); setConditionApplied(''); setDuration('');
+            setCostInputs({ ap: '', mp: '', sp: '' });
+            setSaveAttribute('');
+            setSaveEffect('');
+            setConditionApplied('');
+            setDuration('');
+        }
+        if (category !== 'reaction') {
+            setTrigger('');
         }
     }, [category]);
 
     const resetForm = () => {
-        setName(''); setCategory('feature'); setDescription(''); setTags('');
-        setCostAP(''); setCostMP(''); setCostSP('');
+        setName('');
+        setCategory('feature');
+        setDescription('');
+        setTags('');
+        setCostInputs({ ap: '', mp: '', sp: '' });
         setBalanceCost('1');
-        setActionType(''); setDamageMod(''); setDamageType(''); setRange('');
-        setTargets(''); setDuration(''); setSaveAttribute(''); setSaveEffect('');
-        setConditionApplied(''); setHealingAmount('');
+        setMethod('Passive');
+        setDamageMod('');
+        setDamageType('');
+        setRange('');
+        setTarget('');
+        setDefense('');
+        setDuration('');
+        setSaveAttribute('');
+        setSaveEffect('');
+        setConditionApplied('');
+        setHealingAmount('');
+        setTrigger('');
     };
 
     const constructFeatureData = () => {
-        let costStringParts = [];
-        const numAP = parseInt(costAP, 10) || 0;
-        const numMP = parseInt(costMP, 10) || 0;
-        const numSP = parseInt(costSP, 10) || 0;
+        const numAP = parseInt(costInputs.ap, 10) || 0;
+        const numMP = parseInt(costInputs.mp, 10) || 0;
+        const numSP = parseInt(costInputs.sp, 10) || 0;
         const parsedBalanceCost = parseFloat(balanceCost);
         const numericBalanceCost = Number.isNaN(parsedBalanceCost) ? 1 : Math.max(0, parsedBalanceCost);
 
-        if (numAP > 0) costStringParts.push(`${numAP} AP`);
-        if (numMP > 0) costStringParts.push(`${numMP} MP`);
-        if (numSP > 0) costStringParts.push(`${numSP} SP`);
-        let finalCostString = costStringParts.join(' + ');
+        const costObject = {};
+        if (numAP > 0) costObject.ap = numAP;
+        if (numMP > 0) costObject.mp = numMP;
+        if (numSP > 0) costObject.sp = numSP;
 
-        if (!finalCostString && category === 'reaction') {
-            finalCostString = 'Reaction'; // Default cost text for reaction if no AP/MP/SP
-        }
+        const parsedRange = parseInt(range, 10);
+        const normalizedRange = Number.isNaN(parsedRange) ? undefined : Math.max(0, parsedRange);
 
+        const parsedDamageModifier = parseInt(damageMod, 10);
+        const normalizedDamageModifier = Number.isNaN(parsedDamageModifier) ? undefined : parsedDamageModifier;
 
-        return {
+        const trimmedSummary = description.trim();
+        const trimmedTarget = target.trim();
+        const trimmedMethod = method.trim();
+        const normalizedMethodLower = trimmedMethod.toLowerCase();
+        const isHealingMethod = normalizedMethodLower.includes('healing');
+
+        const featureData = {
             name: name.trim(),
             category,
-            description: description.trim(),
-            tags: tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean),
-            cost: finalCostString || null,
-            costAP: numAP,
-            costMP: numMP,
-            costSP: numSP,
-            actionType: category === 'action' ? actionType : null,
-            damageMod: (category === 'action' && (actionType.includes('Attack') || actionType.includes('Spell'))) ? (parseInt(damageMod, 10) || 0) : null,
-            damageType: (category === 'action' && (actionType.includes('Attack') || actionType.includes('Spell'))) ? damageType.trim() : null,
-            range: (category === 'action' || category === 'attack_enhancement' || (category === 'reaction' && actionType)) ? range.trim() : null,
-            targets: (category === 'action' || category === 'attack_enhancement' || (category === 'reaction' && actionType)) ? targets.trim() : null,
+            description: trimmedSummary,
+            summary: trimmedSummary,
+            tags: tags.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),
+            method: trimmedMethod || (category === 'feature' ? 'Passive' : null),
+            cost: Object.keys(costObject).length > 0 ? costObject : null,
             duration: duration.trim() || null,
-            saveAttribute: saveAttribute || null,
-            saveEffect: saveAttribute ? saveEffect.trim() : null, // Only relevant if there's a save
+            save: saveAttribute || null,
+            saveEffect: saveAttribute ? saveEffect.trim() : null,
             conditionApplied: conditionApplied.trim() || null,
-            healingAmount: (category === 'action' && actionType === 'Healing') ? healingAmount.trim() : null,
+            healingAmount: (category === 'action' && isHealingMethod) ? healingAmount.trim() : null,
             balanceCost: numericBalanceCost,
+            trigger: category === 'reaction' ? (trigger.trim() || null) : null,
         };
-    };
 
-    const handleAdd = () => {
-        if (!name.trim() || !category) { alert("Name and Category are required."); return; }
-        const featureData = constructFeatureData();
-        onAddOnlyToCreature(featureData);
-        resetForm();
-        onCancel();
-    };
-
-    const handleSaveAndAdd = async () => {
-        if (!name.trim() || !category) { alert("Name and Category are required."); return; }
-        const featureData = constructFeatureData();
-        const success = await onSaveAndAddToCreature(featureData);
-        if (success) {
-            resetForm();
-            onCancel();
+        if (category === 'feature') {
+            featureData.effects = [];
         }
+
+        if (category === 'action' || category === 'attack_enhancement' || category === 'reaction') {
+            if (trimmedTarget) {
+                featureData.target = trimmedTarget;
+            }
+            if (normalizedRange !== undefined) {
+                featureData.range = normalizedRange;
+            }
+        }
+
+        if ((category === 'action' || category === 'reaction') && (normalizedDamageModifier !== undefined || damageType.trim())) {
+            featureData.damage = {
+                modifier: normalizedDamageModifier || 0,
+                type: damageType.trim() || null,
+            };
+        }
+
+        if ((category === 'action' || category === 'reaction') && defense) {
+            featureData.defense = defense;
+        }
+
+        return featureData;
     };
 
-    // --- Conditional rendering flags ---
-    const isAction = category === 'action';
-    const isAttackEnhancement = category === 'attack_enhancement';
-    const isReaction = category === 'reaction';
+    if (Object.keys(cost).length > 0 || kind === 'action' || kind === 'reaction' || kind === 'attack_enhancement') {
+      featureData.cost = cost;
+    }
 
+    const damageData = {
+      bonus: damageBonusNumber,
+      type: damageType.trim(),
+      base: null,
+    };
+
+    const isAttackLike = kind === 'action' && method && (method.includes('Attack') || method.includes('Spell'));
+    if (isAttackLike || (kind === 'attack_enhancement' && (damageBonus || damageType))) {
+      featureData.damage = damageData;
+    }
+
+    const saveData = {
+      attribute: saveAttribute,
+      dcMod: 0,
+      effect: saveEffect.trim(),
+    };
+
+    if (kind !== 'feature') {
+      featureData.method = method;
+      featureData.range = range.trim();
+      featureData.target = target.trim();
+      if (defense) {
+        featureData.defense = defense;
+      }
+      featureData.save = saveData;
+      featureData.trigger = trigger.trim();
+    }
+
+    const methodLower = (method || '').toLowerCase();
+    const isAttackMethod = methodLower.includes('attack') || methodLower.includes('spell');
+    const isHealingMethod = methodLower.includes('healing');
     const showCostFields = isAction || isAttackEnhancement || isReaction;
-    const showActionTypeField = isAction;
-    const showAttackSpecificFields = isAction && actionType && (actionType.includes('Attack') || actionType.includes('Spell'));
-    const showHealingField = isAction && actionType === 'Healing';
-    const showSaveFields = isAction || isAttackEnhancement || isReaction; // Most actions/reactions can cause saves
-    const showDurationField = isAction || isAttackEnhancement || isReaction || conditionApplied; // Duration often linked to conditions or ongoing effects
+    const showMethodField = category !== 'feature';
+    const showTargetingFields = isAction || isAttackEnhancement || isReaction;
+    const showAttackSpecificFields = (isAction || isReaction) && isAttackMethod;
+    const showDefenseField = (isAction || isReaction) && isAttackMethod;
+    const showHealingField = isAction && isHealingMethod;
+    const showSaveFields = isAction || isAttackEnhancement || isReaction;
+    const showDurationField = isAction || isAttackEnhancement || isReaction || conditionApplied;
 
+    return featureData;
+  };
 
-    return (
-        <div className="feature-creation-form">
-            <h3>Create Custom Trait</h3> {/* More generic title */}
+  const handleAdd = () => {
+    const data = constructFeatureData();
+    onAddOnlyToCreature?.(data);
+    resetForm();
+  };
 
-            <div className="form-group">
-                <label htmlFor="customFeatureName">Name:</label>
-                <input type="text" id="customFeatureName" value={name} onChange={e => setName(e.target.value)} placeholder="Unique Name" />
+  const handleSaveAndAdd = async () => {
+    const data = constructFeatureData();
+    const success = await onSaveAndAddToCreature?.(data);
+    if (success) {
+      resetForm();
+    }
+  };
+
+  const isAction = kind === 'action';
+  const isAttackEnhancement = kind === 'attack_enhancement';
+  const isReaction = kind === 'reaction';
+
+  const showCostFields = isAction || isAttackEnhancement || isReaction;
+  const showMethodField = isAction || isReaction;
+  const showAttackSpecificFields = isAction && method && (method.includes('Attack') || method.includes('Spell'));
+  const showHealingField = isAction && method === 'Healing';
+  const showSaveFields = isAction || isAttackEnhancement || isReaction;
+  const showDurationField = (isAction || isAttackEnhancement || isReaction) && !!conditionApplied;
+  const showTriggerField = isReaction || isAttackEnhancement;
+
+  return (
+    <div className="feature-creation-form">
+      <h3>Create Custom Trait</h3>
+
+      <div className="form-group">
+        <label htmlFor="customFeatureName">Name:</label>
+        <input
+          type="text"
+          id="customFeatureName"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Unique Name"
+        />
+      </div>
+
+      <div className="form-group button-group">
+        <label>Category:</label>
+        {FEATURE_KINDS.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            className={`category-button ${kind === option.id ? 'active' : ''}`}
+            onClick={() => setKind(option.id)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="customFeatureDesc">Summary:</label>
+        <textarea
+          id="customFeatureDesc"
+          value={summary}
+          onChange={(e) => setSummary(e.target.value)}
+          rows="3"
+          placeholder="What this trait does..."
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="customFeatureBalanceCost">Balance Cost:</label>
+        <input
+          type="number"
+          id="customFeatureBalanceCost"
+          min="0"
+          step="0.5"
+          value={balanceCost}
+          onChange={(e) => setBalanceCost(e.target.value)}
+        />
+        <small className="form-helper-text">
+          Set to 1 for a standard-strength feature. Increase the value for stronger effects.
+        </small>
+      </div>
+
+      {showCostFields && (
+        <fieldset className="form-section">
+          <legend>Costs</legend>
+          <div className="cost-inputs">
+            <div>
+              <label>AP:</label>
+              <input type="number" min="0" value={costAP} onChange={(e) => setCostAP(e.target.value)} />
             </div>
-
-            <div className="form-group button-group">
-                <label>Category:</label>
-                {FEATURE_CATEGORIES.map(cat => (
-                    <button
-                        key={cat.id} type="button"
-                        className={`category-button ${category === cat.id ? 'active' : ''}`}
-                        onClick={() => setCategory(cat.id)}
-                    >
-                        {cat.label}
-                    </button>
-                ))}
+            <div>
+              <label>MP:</label>
+              <input type="number" min="0" value={costMP} onChange={(e) => setCostMP(e.target.value)} />
             </div>
-
-            <div className="form-group">
-                <label htmlFor="customFeatureDesc">Description:</label>
-                <textarea id="customFeatureDesc" value={description} onChange={e => setDescription(e.target.value)} rows="3" placeholder="What this trait does..."></textarea>
+            <div>
+              <label>SP:</label>
+              <input type="number" min="0" value={costSP} onChange={(e) => setCostSP(e.target.value)} />
             </div>
+          </div>
+        </fieldset>
+      )}
 
-            <div className="form-group">
-                <label htmlFor="customFeatureBalanceCost">Balance Cost:</label>
+      {showMethodField && (
+        <fieldset className="form-section">
+          <legend>Action Details</legend>
+          <div className="form-group">
+            <label>Method:</label>
+            <select value={method} onChange={(e) => setMethod(e.target.value)}>
+              {ACTION_METHODS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Range:</label>
+            <input
+              type="text"
+              value={range}
+              onChange={(e) => setRange(e.target.value)}
+              placeholder="Melee, 5 spaces, Self"
+            />
+          </div>
+          <div className="form-group">
+            <label>Defense Targeted:</label>
+            <select value={defense} onChange={(e) => setDefense(e.target.value)}>
+              <option value="">Select...</option>
+              <option value="PD">PD</option>
+              <option value="AD">AD</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Target:</label>
+            <input
+              type="text"
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              placeholder="1 creature, Cone, All allies"
+            />
+          </div>
+        </fieldset>
+      )}
+
+      {showAttackSpecificFields && (
+        <fieldset className="form-section">
+          <legend>Attack Properties</legend>
+          <div className="form-group">
+            <label>Damage Modifier:</label>
+            <input
+              type="number"
+              value={damageBonus}
+              onChange={(e) => setDamageBonus(e.target.value)}
+              placeholder="0, 1, -2"
+            />
+          </div>
+          <div className="form-group">
+            <label>Damage Type:</label>
+            <input
+              type="text"
+              value={damageType}
+              onChange={(e) => setDamageType(e.target.value)}
+              placeholder="physical, fire"
+            />
+          </div>
+        </fieldset>
+      )}
+
+      {showHealingField && (
+        <fieldset className="form-section">
+          <legend>Healing Properties</legend>
+          <div className="form-group">
+            <label>Healing Amount:</label>
+            <input
+              type="text"
+              value={healingAmount}
+              onChange={(e) => setHealingAmount(e.target.value)}
+              placeholder="5, MIG Mod"
+            />
+          </div>
+        </fieldset>
+      )}
+
+      {(showSaveFields || showDurationField || showTriggerField) && (
+        <fieldset className="form-section">
+          <legend>Effects & Duration</legend>
+          {showSaveFields && (
+            <>
+              <div className="form-group">
+                <label>Target Save Attribute:</label>
+                <select value={saveAttribute} onChange={(e) => setSaveAttribute(e.target.value)}>
+                  {SAVE_ATTRIBUTES.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Effect on Save:</label>
                 <input
-                    type="number"
-                    id="customFeatureBalanceCost"
-                    min="0"
-                    step="0.5"
-                    value={balanceCost}
-                    onChange={(e) => setBalanceCost(e.target.value)}
+                  type="text"
+                  value={saveEffect}
+                  onChange={(e) => setSaveEffect(e.target.value)}
+                  placeholder="half damage, negates"
                 />
-                <small className="form-helper-text">Set to 1 for a standard-strength feature. Increase the value for stronger effects.</small>
+              </div>
+              <div className="form-group">
+                <label>Condition Applied:</label>
+                <input
+                  type="text"
+                  value={conditionApplied}
+                  onChange={(e) => setConditionApplied(e.target.value)}
+                  placeholder="Stunned, Prone"
+                />
+              </div>
+            </>
+          )}
+          {showDurationField && (
+            <div className="form-group">
+              <label>Duration:</label>
+              <select value={duration} onChange={(e) => setDuration(e.target.value)}>
+                {DURATIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* --- Cost Inputs --- */}
@@ -205,26 +461,93 @@ const FeatureCreationForm = ({ onCancel, onAddOnlyToCreature, onSaveAndAddToCrea
                 <fieldset className="form-section">
                     <legend>Costs</legend>
                     <div className="cost-inputs">
-                        <div><label>AP:</label><input type="number" min="0" value={costAP} onChange={e => setCostAP(e.target.value)} /></div>
-                        <div><label>MP:</label><input type="number" min="0" value={costMP} onChange={e => setCostMP(e.target.value)} /></div>
-                        <div><label>SP:</label><input type="number" min="0" value={costSP} onChange={e => setCostSP(e.target.value)} /></div>
+                        <div>
+                            <label>AP:</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={costInputs.ap}
+                                onChange={(e) => setCostInputs((prev) => ({ ...prev, ap: e.target.value }))}
+                            />
+                        </div>
+                        <div>
+                            <label>MP:</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={costInputs.mp}
+                                onChange={(e) => setCostInputs((prev) => ({ ...prev, mp: e.target.value }))}
+                            />
+                        </div>
+                        <div>
+                            <label>SP:</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={costInputs.sp}
+                                onChange={(e) => setCostInputs((prev) => ({ ...prev, sp: e.target.value }))}
+                            />
+                        </div>
                     </div>
                 </fieldset>
             )}
 
-            {/* --- Action Specific --- */}
-            {showActionTypeField && (
+            {/* --- Method, Targeting, and Reaction Details --- */}
+            {showMethodField && (
                 <fieldset className="form-section">
                     <legend>Action Details</legend>
                     <div className="form-group">
-                        <label>Action Type:</label>
-                        <select value={actionType} onChange={e => setActionType(e.target.value)}>
-                            {ACTION_TYPES.map(at => <option key={at.id} value={at.id}>{at.label}</option>)}
+                        <label>Method:</label>
+                        <select value={method} onChange={(e) => setMethod(e.target.value)}>
+                            {METHOD_OPTIONS.map((opt) => (
+                                <option key={opt.id} value={opt.id}>{opt.label}</option>
+                            ))}
                         </select>
                     </div>
-                    {/* Range & Targets are common for many actions */}
-                    <div className="form-group"><label>Range:</label><input type="text" value={range} onChange={e => setRange(e.target.value)} placeholder="Melee, 5 spaces, Self" /></div>
-                    <div className="form-group"><label>Targets:</label><input type="text" value={targets} onChange={e => setTargets(e.target.value)} placeholder="1 creature, Cone, All allies" /></div>
+                    {showDefenseField && (
+                        <div className="form-group">
+                            <label>Defense:</label>
+                            <select value={defense} onChange={(e) => setDefense(e.target.value)}>
+                                <option value="">Select defense...</option>
+                                <option value="PD">PD</option>
+                                <option value="AD">AD</option>
+                            </select>
+                        </div>
+                    )}
+                    {showTargetingFields && (
+                        <>
+                            <div className="form-group">
+                                <label>Target:</label>
+                                <input
+                                    type="text"
+                                    value={target}
+                                    onChange={(e) => setTarget(e.target.value)}
+                                    placeholder="one creature, cone, all allies"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Range (spaces):</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={range}
+                                    onChange={(e) => setRange(e.target.value)}
+                                    placeholder="Leave blank for default"
+                                />
+                            </div>
+                        </>
+                    )}
+                    {isReaction && (
+                        <div className="form-group">
+                            <label>Trigger:</label>
+                            <input
+                                type="text"
+                                value={trigger}
+                                onChange={(e) => setTrigger(e.target.value)}
+                                placeholder="When an ally within 6 spaces is hit..."
+                            />
+                        </div>
+                    )}
                 </fieldset>
             )}
 
@@ -251,7 +574,7 @@ const FeatureCreationForm = ({ onCancel, onAddOnlyToCreature, onSaveAndAddToCrea
                     <legend>Effects & Duration</legend>
                     {showSaveFields && (
                         <>
-                            <div className="form-group"><label>Target Save Attribute:</label>
+                            <div className="form-group"><label>Save Attribute:</label>
                                 <select value={saveAttribute} onChange={e => setSaveAttribute(e.target.value)}>
                                     {SAVE_ATTRIBUTES.map(sa => <option key={sa.id} value={sa.id}>{sa.label}</option>)}
                                 </select>
@@ -271,17 +594,41 @@ const FeatureCreationForm = ({ onCancel, onAddOnlyToCreature, onSaveAndAddToCrea
             )}
 
             <div className="form-group">
-                <label>Tags (comma-separated):</label>
-                <input type="text" value={tags} onChange={e => setTags(e.target.value)} placeholder="undead, buff, magical" />
+              <label>Trigger:</label>
+              <input
+                type="text"
+                value={trigger}
+                onChange={(e) => setTrigger(e.target.value)}
+                placeholder="When hit, After you attack, Reaction to..."
+              />
             </div>
+          )}
+        </fieldset>
+      )}
 
-            <div className="form-actions">
-                <button type="button" onClick={onCancel} className="button-cancel">Cancel</button>
-                <button type="button" onClick={handleAdd} className="button-add">Add to Creature</button>
-                <button type="button" onClick={handleSaveAndAdd} className="button-save">Save & Add to Creature</button>
-            </div>
-        </div>
-    );
+      <div className="form-group">
+        <label>Tags (comma-separated):</label>
+        <input
+          type="text"
+          value={tags}
+          onChange={(e) => setTags(e.target.value)}
+          placeholder="undead, buff, magical"
+        />
+      </div>
+
+      <div className="form-actions">
+        <button type="button" onClick={onCancel} className="button-cancel">
+          Cancel
+        </button>
+        <button type="button" onClick={handleAdd} className="button-add">
+          Add to Creature
+        </button>
+        <button type="button" onClick={handleSaveAndAdd} className="button-save">
+          Save & Add to Creature
+        </button>
+      </div>
+    </div>
+  );
 };
 
 export default FeatureCreationForm;

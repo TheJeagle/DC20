@@ -19,7 +19,10 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
         range,
         rangeValue,
         rangeUnit,
+        summary,
         details = '',
+        category,
+        kind,
     } = action;
 
     const resolvedDamageType = damage?.type || damageType || 'damage';
@@ -76,17 +79,22 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
                 onSaveField('cost.mp', parsedMP);
                 onSaveField('cost.sp', parsedSP);
             }
+            return result;
+        };
+
+        const onCostSave = (field, val) => {
+            if (!onSaveField) return;
+            const parsed = parseCostString(val || '');
+            onSaveField('cost', Object.keys(parsed).length > 0 ? parsed : null);
         };
 
         return (
-            <strong>
-                <EditableField
-                    value={costString}
-                    onSave={onCostSave}
-                    fieldType="text"
-                    className="editable-number-field"
-                />
-            </strong>
+            <EditableField
+                value={costString}
+                onSave={onCostSave}
+                fieldType="text"
+                className="editable-number-field"
+            />
         );
     };
 
@@ -102,9 +110,10 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
             <strong>{renderCost()}</strong>
             ):
             {' '}
+            base damage {damageModifier >= 0 ? '+' : ''}
             <EditableField
-                value={finalDamage}
-                onSave={(f, val) => handleSave('damage', val)}
+                value={damageModifier}
+                onSave={(f, val) => handleSave('damage.modifier', val)}
                 fieldType="number"
                 className="editable-description-field"
             />{' '}
@@ -117,7 +126,7 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
             damage vs{' '}
             {isEditingDefense ? (
                 <select
-                    value={targetsDefense}
+                    value={defense}
                     onChange={(e) => {
                         handleSave('defense', e.target.value);
                         setIsEditingDefense(false);
@@ -154,8 +163,8 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
                 <>
                     <br />
                     <EditableField
-                        value={details}
-                        onSave={(f, val) => handleSave('details', val)}
+                        value={summaryText}
+                        onSave={(f, val) => handleSave('summary', val)}
                         fieldType="text"
                         className="editable-description-field"
                     />

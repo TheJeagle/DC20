@@ -247,8 +247,8 @@ const evaluateAttackCoverage = (creatureStats, selectedFeatures = []) => {
   iterateActions(creatureStats?.Reactions);
 
   selectedFeatures
-    .filter((feature) => feature && feature.category === 'action')
-    .forEach((feature) => registerDefense(feature.targetsDefense));
+    .filter((feature) => feature && (feature.kind || feature.category) === 'action')
+    .forEach((feature) => registerDefense(feature.defense || feature.targetsDefense));
 
   const hasPD = defTargets.has('PD');
   const hasAD = defTargets.has('AD');

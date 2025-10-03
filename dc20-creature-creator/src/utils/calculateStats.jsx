@@ -4,8 +4,8 @@ import { applyDefaultActionOverrides, applyUserOverrides } from './overrideAppli
 import { formatForPresentation } from './presentationFormatter';
 
 const isAttackAction = (action) => {
-  if (!action || typeof action.actionType !== 'string') return false;
-  const type = action.actionType.toLowerCase();
+  if (!action) return false;
+  const type = (action.method || action.actionType || '').toLowerCase();
   return type.includes('attack') || type.includes('spell');
 };
 
