@@ -1,5 +1,92 @@
 import { deepClone } from './baseStats';
 
+const normalizeKindString = (value) =>
+  typeof value === 'string' ? value.trim().toLowerCase().replace(/[\s-]+/g, '_') : '';
+
+const getFeatureKind = (feature = {}) => {
+  if (!feature || typeof feature !== 'object') return 'feature';
+
+  const knownKinds = new Set([
+    'feature',
+    'action',
+    'reaction',
+    'apex_action',
+    'attack_enhancement',
+    'resistance',
+    'vulnerability',
+    'immunity',
+    'sense',
+    'language',
+  ]);
+
+  const candidates = [feature.kind, feature.category, feature.type, feature.group];
+  for (const candidate of candidates) {
+    const normalized = normalizeKindString(candidate);
+    if (!normalized) continue;
+    if (knownKinds.has(normalized)) return normalized;
+
+    switch (normalized) {
+      case 'apexaction':
+        return 'apex_action';
+      case 'attackenhancement':
+      case 'enhancement':
+        return 'attack_enhancement';
+      case 'resist':
+      case 'resistancee':
+        return 'resistance';
+      case 'immune':
+        return 'immunity';
+      case 'vulnerable':
+      case 'vulnerability':
+        return 'vulnerability';
+      case 'sense_ability':
+      case 'senses':
+        return 'sense';
+      case 'languages':
+        return 'language';
+      default:
+        break;
+    }
+  }
+
+  if (
+    feature.actionType ||
+    feature.method ||
+    feature.trigger ||
+    feature.range ||
+    feature.target ||
+    feature.damage ||
+    feature.save ||
+    typeof feature.costAP === 'number' ||
+    typeof feature.costMP === 'number' ||
+    typeof feature.costSP === 'number' ||
+    (feature.cost && typeof feature.cost === 'object' && Object.keys(feature.cost).length > 0)
+  ) {
+    return 'action';
+  }
+
+  if (feature.value || feature.displayValue) {
+    const text = `${feature.value || ''} ${feature.displayValue || ''}`.toLowerCase();
+    if (text.includes('resist')) return 'resistance';
+    if (text.includes('immune')) return 'immunity';
+    if (text.includes('vulnerab')) return 'vulnerability';
+    if (text.includes('language')) return 'language';
+    if (text.includes('vision') || text.includes('sense')) return 'sense';
+  }
+
+  if (typeof feature.name === 'string') {
+    const name = feature.name.toLowerCase();
+    if (name.includes('reaction')) return 'reaction';
+    if (name.includes('resistance')) return 'resistance';
+    if (name.includes('immunity')) return 'immunity';
+    if (name.includes('vulnerability')) return 'vulnerability';
+    if (name.includes('sense') || name.includes('vision')) return 'sense';
+    if (name.includes('language')) return 'language';
+  }
+
+  return 'feature';
+};
+
 const numberOr = (value, fallback = 0) =>
   typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 
