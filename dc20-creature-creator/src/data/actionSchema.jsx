@@ -2,13 +2,24 @@
 // Schema definition for creature actions stored with a creature document
 export const creatureActionSchema = {
   name: '',       // Display name of the action
-  costAP: 0,      // Action point cost
-  costMP: 0,      // Magic point cost
-  damageMod: 0,   // Damage modifier relative to base damage
-  saveDCMod: 0,   // Adjustment applied to Save DC
+  cost: {         // Resource costs to use the action
+    ap: 0,
+    mp: 0,
+    sp: 0,
+    summary: '',
+    special: '',
+  },
+  damage: {       // Damage adjustments provided by the action
+    modifier: 0,
+    type: '',
+    base: null,
+  },
+  save: null,     // Save text or configuration
   range: '',      // Range information (e.g., "Melee", "5 spaces")
-  targets: '',    // Target description
+  target: '',     // Target description
+  defense: '',    // Defense targeted by the attack
   actionType: '', // Classification like "Melee Martial Attack"
+  summary: '',    // Short rules summary of the action
   description: '',// Text describing the action's effect
   source: '',     // 'feature' for user selected traits or 'default'
 };

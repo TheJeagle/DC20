@@ -255,6 +255,60 @@ const CreatureCreatorPage = ({ currentUser }) => {
     dispatch({ type: 'SET_OVERRIDES', payload: updatedOverrides });
   };
 
+  const setNestedValue = (object, path, value) => {
+    const parts = path.split('.');
+    const clone = { ...object };
+    let cursor = clone;
+    parts.slice(0, -1).forEach((part) => {
+      const existing = cursor[part];
+      cursor[part] = existing && typeof existing === 'object' ? { ...existing } : {};
+      cursor = cursor[part];
+    });
+    cursor[parts[parts.length - 1]] = value;
+    return clone;
+  };
+
+  const normalizeNumericField = (field, value) => {
+    const numericFields = [
+      'costAP',
+      'costMP',
+      'costSP',
+      'cost.ap',
+      'cost.mp',
+      'cost.sp',
+      'damageMod',
+      'saveDCMod',
+      'rangeValue',
+      'areaSize',
+      'damage',
+    ];
+    if (!numericFields.includes(field)) return value;
+    const num = parseInt(value, 10);
+    return Number.isNaN(num) ? 0 : num;
+  };
+
+  const syncLegacyFields = (feature, field, numericValue) => {
+    if (field === 'cost.ap') {
+      return { ...feature, costAP: numericValue };
+    }
+    if (field === 'cost.mp') {
+      return { ...feature, costMP: numericValue };
+    }
+    if (field === 'cost.sp') {
+      return { ...feature, costSP: numericValue };
+    }
+    if (field === 'target.text') {
+      return { ...feature, targetDescription: numericValue };
+    }
+    if (field === 'range.text') {
+      return { ...feature, range: numericValue };
+    }
+    if (field === 'defense') {
+      return { ...feature, targetsDefense: numericValue };
+    }
+    return feature;
+  };
+
   const handleActionUpdate = (actionIndex, field, value) => {
     const actionFeatures = selectedFeatures.filter((f) => f.category === 'action');
     const target = actionFeatures[actionIndex];
@@ -262,28 +316,41 @@ const CreatureCreatorPage = ({ currentUser }) => {
     const targetId = target.id;
     const updatedFeatures = selectedFeatures.map((feature) => {
       if (feature.id !== targetId) return feature;
-      let newVal = value;
-      if (['costAP', 'costMP', 'costSP', 'damageMod', 'saveDCMod', 'rangeValue', 'areaSize'].includes(field)) {
-        const num = parseInt(value, 10);
-        newVal = Number.isNaN(num) ? 0 : num;
+      const normalizedValue = normalizeNumericField(field, value);
+      if (field.includes('.')) {
+        let updated = setNestedValue(feature, field, normalizedValue);
+        updated = syncLegacyFields(updated, field, normalizedValue);
+        return updated;
       }
-      return { ...feature, [field]: newVal };
+      const updated = { ...feature, [field]: normalizedValue };
+      return syncLegacyFields(updated, field, normalizedValue);
     });
     dispatch({ type: 'SET_SELECTED_FEATURES', payload: updatedFeatures });
   };
 
   const handleDefaultActionUpdate = (actionIndex, field, value) => {
     const current = actionOverrides[actionIndex] || {};
-    let newVal = value;
-    if (['costAP', 'costMP', 'damage'].includes(field)) {
-      const num = parseInt(value, 10);
-      newVal = Number.isNaN(num) ? 0 : num;
+    const normalizedValue = normalizeNumericField(field, value);
+    let updatedAction = field.includes('.')
+      ? setNestedValue(current, field, normalizedValue)
+      : { ...current, [field]: normalizedValue };
+    if (field === 'cost.ap') {
+      updatedAction = { ...updatedAction, costAP: normalizedValue };
+    } else if (field === 'cost.mp') {
+      updatedAction = { ...updatedAction, costMP: normalizedValue };
+    } else if (field === 'cost.sp') {
+      updatedAction = { ...updatedAction, costSP: normalizedValue };
+    } else if (field === 'target.text') {
+      updatedAction = { ...updatedAction, targetDescription: normalizedValue };
+    } else if (field === 'range.text') {
+      updatedAction = { ...updatedAction, range: normalizedValue };
     }
+
     dispatch({
       type: 'SET_ACTION_OVERRIDES',
       payload: {
         ...actionOverrides,
-        [actionIndex]: { ...current, [field]: newVal },
+        [actionIndex]: updatedAction,
       },
     });
   };

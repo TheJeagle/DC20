@@ -60,10 +60,11 @@ describe('calculateCreatureStats', () => {
     };
 
     const result = calculateCreatureStats(inputs, [action], {});
-    const displayAttack = result.display.Combat.Attacks.find(a => a.name.startsWith('Fiery Strike'));
+    const displayAttack = result.display.Combat.Attacks.find((a) => a.name.startsWith('Fiery Strike'));
     expect(displayAttack).toBeDefined();
     expect(displayAttack.details).toContain('4 fire damage vs PD.');
-    expect(displayAttack.details).toContain('DC 16');
+    expect(displayAttack.details).toContain('Target 1 creature within 1 space.');
+    expect(displayAttack.details).toContain('Mig save (DC 16).');
 
   });
 
@@ -91,6 +92,7 @@ describe('calculateCreatureStats', () => {
     const displayAttack = result.display.Combat.Attacks[0];
     expect(displayAttack.name).toBe('Custom Attack');
     expect(displayAttack.details).toContain('8 physical damage');
+    expect(displayAttack.details).toContain('Target 1 creature within 1 space.');
   });
 
   it('assigns LAP and formats apex actions', () => {

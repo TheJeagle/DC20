@@ -84,35 +84,60 @@ export const applyOverrides = (creatureState, overrides = {}, actionOverrides = 
     actionOverrides && typeof actionOverrides === 'object' ? { ...actionOverrides } : {},
 });
 
+const toCostObject = (action = {}) => {
+  const cost = action.cost && typeof action.cost === 'object' ? action.cost : {};
+  return {
+    ap: typeof cost.ap === 'number' ? cost.ap : action.costAP || 0,
+    mp: typeof cost.mp === 'number' ? cost.mp : action.costMP || 0,
+    sp: typeof cost.sp === 'number' ? cost.sp : action.costSP || 0,
+    special: cost.special,
+    summary: cost.summary,
+  };
+};
+
+const mapDisplayAction = (action = {}, source = 'default') => {
+  const cost = toCostObject(action);
+  const target = action.target?.text || action.target || action.targetDescription || action.targets || '';
+  const range =
+    (action.range && typeof action.range === 'object'
+      ? action.range.text || `${action.range.value || ''} ${action.range.unit || ''}`.trim()
+      : action.range) || '';
+
+  return {
+    name: action.name || '',
+    cost,
+    costAP: cost.ap,
+    costMP: cost.mp,
+    costSP: cost.sp,
+    damage: action.damage || { modifier: action.damageMod || 0, type: action.damageType },
+    damageMod: action.damage?.modifier || action.damageMod || 0,
+    save: action.save || null,
+    saveDCMod: action.save?.dcMod || action.saveDCMod || 0,
+    range,
+    target,
+    defense: action.defense || action.targetsDefense || '',
+    actionType: action.actionType || action.type || '',
+    description: action.summary || action.descriptionCore || action.description || '',
+    summary: action.summary || action.descriptionCore || action.description || '',
+    source,
+    id: action.id,
+  };
+};
+
 const createDisplayActions = (statBlock, selectedFeatures = []) => {
-  const defaultActions = (statBlock?.raw?.DefaultAttacks || []).map((attack) => ({
-    name: attack.name,
-    costAP: attack.costAP || 0,
-    costMP: attack.costMP || 0,
-    damageMod: 0,
-    saveDCMod: 0,
-    range: attack.range || '',
-    targets: attack.targetDescription || '',
-    actionType: attack.type || '',
-    description: '',
-    source: 'default',
-  }));
+  const defaultActions = (statBlock?.raw?.DefaultAttacks || []).map((attack) =>
+    mapDisplayAction(
+      {
+        ...attack,
+        cost: attack.cost || { ap: attack.costAP || 0, mp: attack.costMP || 0, sp: attack.costSP || 0 },
+      },
+      'default',
+    ),
+  );
 
   const featureActions = (selectedFeatures || [])
     .filter((feature) => feature && feature.category === 'action')
-    .map((feature) => ({
-      name: feature.name,
-      costAP: feature.costAP || 0,
-      costMP: feature.costMP || 0,
-      damageMod: feature.damageMod || 0,
-      saveDCMod: feature.saveDCMod || 0,
-      range: feature.range || '',
-      targets: feature.targets || '',
-      actionType: feature.actionType || '',
-      description: feature.descriptionCore || feature.description || '',
-      source: 'feature',
-      id: feature.id,
-    }));
+    .map((feature) => mapDisplayAction(feature, 'feature'));
 
   return {
     defaultActions,

@@ -18,31 +18,107 @@ const formatAttributeWithSave = (attributeValue, saveValue) => {
   return `${attributeValue} (${saveValue})`;
 };
 
-const createAttackDescription = (attack, extra) => {
-  const parts = [];
-  if (attack.damage) {
-    const damageType = attack.damageType || 'damage';
-    const defense = attack.targetsDefense ? ` vs ${attack.targetsDefense}` : '';
-    parts.push(`${attack.damage} ${damageType} damage${defense}.`);
+const extractRangeText = (value) => {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    return value.text || [value.value, value.unit].filter(Boolean).join(' ').trim();
   }
+  return '';
+};
 
-  if (attack.targetDescription) {
-    const range = attack.range ? ` within ${attack.range}` : '';
-    parts.push(`Target ${attack.targetDescription}${range}.`);
+const extractTargetText = (value) => {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    return value.text || value.summary || value.description || '';
   }
+  return '';
+};
 
-  if (extra?.saveAttribute) {
-    const saveDC = extra.calculatedSaveDC;
-    let saveText = `Target makes a ${extra.saveAttribute} save (DC ${saveDC})`;
+const extractDamageInfo = (attack, extra) => {
+  const source = extra?.damage || attack.damage;
+  if (!source) return null;
+
+  const numericSource = typeof source === 'number' ? source : null;
+  const type =
+    (source && typeof source === 'object' ? source.type : undefined) ||
+    extra?.damageType ||
+    attack.damageType ||
+    'damage';
+  const total =
+    typeof extra?.calculatedDamage === 'number'
+      ? extra.calculatedDamage
+      : typeof source.total === 'number'
+      ? source.total
+      : typeof source.base === 'number'
+      ? source.base + (source.modifier || 0)
+      : numericSource;
+  const defense =
+    extra?.defense ||
+    (source && typeof source === 'object' ? source.defense : undefined) ||
+    attack.defense ||
+    attack.targetsDefense;
+
+  if (!total) return null;
+
+  return {
+    total,
+    type,
+    defense,
+  };
+};
+
+const extractSaveInfo = (extra) => {
+  if (!extra) return null;
+  if (extra.saveText) {
+    return { text: extra.saveText, dc: extra.calculatedSaveDC };
+  }
+  if (typeof extra.save === 'string') {
+    return { text: extra.save, dc: extra.calculatedSaveDC };
+  }
+  if (extra.save && typeof extra.save === 'object') {
+    const text = extra.save.text || extra.save.summary || extra.save.description || '';
+    return { text, dc: extra.calculatedSaveDC };
+  }
+  if (extra.saveAttribute) {
+    let saveText = `Target makes a ${extra.saveAttribute} save`;
     if (extra.conditionApplied) {
       saveText += ` or becomes ${extra.conditionApplied}`;
       if (extra.conditionDuration) {
         saveText += ` (${extra.conditionDuration.replace('your', 'its')})`;
       }
-    } else {
-      saveText += ' for effect';
     }
-    parts.push(`${saveText}.`);
+    return { text: saveText, dc: extra.calculatedSaveDC };
+  }
+  return null;
+};
+
+const createAttackDescription = (attack, extra) => {
+  const parts = [];
+  const damageInfo = extractDamageInfo(attack, extra);
+  if (damageInfo) {
+    const defenseText = damageInfo.defense ? ` vs ${damageInfo.defense}` : '';
+    parts.push(`${damageInfo.total} ${damageInfo.type} damage${defenseText}.`);
+  }
+
+  const targetText = extractTargetText(extra?.target || attack.target || extra?.targetDescription || attack.targetDescription);
+  const rangeText = extractRangeText(extra?.range || attack.range || (extra?.rangeValue && extra?.rangeUnit
+    ? { value: extra.rangeValue, unit: extra.rangeUnit }
+    : attack.rangeValue && attack.rangeUnit
+    ? { value: attack.rangeValue, unit: attack.rangeUnit }
+    : ''));
+  if (targetText) {
+    const rangeSentence = rangeText ? ` within ${rangeText}` : '';
+    parts.push(`Target ${targetText}${rangeSentence}.`);
+  } else if (rangeText) {
+    parts.push(`Range ${rangeText}.`);
+  }
+
+  const saveInfo = extractSaveInfo(extra);
+  if (saveInfo && saveInfo.text) {
+    const dcText = typeof saveInfo.dc === 'number' ? ` (DC ${saveInfo.dc})` : '';
+    parts.push(`${saveInfo.text}${dcText}.`);
   } else if (extra?.conditionApplied) {
     let conditionText = `Applies ${extra.conditionApplied}`;
     if (extra.conditionDuration) {
@@ -59,8 +135,12 @@ const createAttackDescription = (attack, extra) => {
     );
   }
 
-  if (extra?.description) {
+  if (extra?.summary) {
+    parts.push(extra.summary);
+  } else if (extra?.description) {
     parts.push(extra.description);
+  } else if (attack.summary) {
+    parts.push(attack.summary);
   }
 
   return parts.filter(Boolean).join(' ');
@@ -68,8 +148,7 @@ const createAttackDescription = (attack, extra) => {
 
 const formatAttackDisplay = (attack, extras = {}) => ({
   name: attack.name,
-  costAP: attack.costAP || 0,
-  costMP: attack.costMP || 0,
+  cost: attack.cost || { ap: attack.costAP || 0, mp: attack.costMP || 0, sp: attack.costSP || 0 },
   details: createAttackDescription(attack, extras),
   originalFeatureId: attack.originalFeatureId || null,
 });
@@ -136,12 +215,13 @@ export const formatForPresentation = (raw, derived) => {
   });
 
   display.Combat.AttackEnhancements = (derived.attackEnhancements || []).map((enh) => ({
-    name: `${enh.name} (${enh.cost || 'Special'})`,
+    name: `${enh.name} (${enh.displayCost || 'Special'})`,
     details: createAttackDescription({
-      damage: null,
-      targetsDefense: null,
-      targetDescription: null,
-      range: null,
+      damage: enh.damage,
+      defense: enh.defense,
+      target: enh.target,
+      range: enh.range,
+      summary: enh.summary,
     }, enh),
     originalFeatureId: enh.originalFeatureId,
   }));
