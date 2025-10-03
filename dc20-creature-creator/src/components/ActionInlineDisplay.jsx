@@ -24,36 +24,43 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
     } = action;
 
     const resolvedDamageType = damage?.type || damageType || 'damage';
-    const damageModifier = (() => {
+    const damageModifierRaw = (() => {
         if (typeof damage?.modifier === 'number') return damage.modifier;
         if (typeof damage?.modifier === 'string') return damage.modifier;
         if (typeof action.damageMod === 'number') return action.damageMod;
         if (typeof action.damageMod === 'string') return action.damageMod;
         return 0;
     })();
-    const numericDamageModifier = Number(damageModifier);
+    const numericDamageModifier = Number(damageModifierRaw);
     const modifierIsNumeric = !Number.isNaN(numericDamageModifier);
-    const resolvedDamageAmount = (() => {
+    const baseDamageAmount = (() => {
         if (typeof calculatedDamage === 'number' && Number.isFinite(calculatedDamage)) {
             return calculatedDamage;
         }
-        if (typeof damage?.total === 'number' && Number.isFinite(damage.total)) {
-            return damage.total;
+        if (typeof damage?.base === 'number' && Number.isFinite(damage.base)) {
+            return damage.base;
         }
         if (
-            typeof damage?.base === 'number'
+            typeof damage?.total === 'number'
+            && Number.isFinite(damage.total)
             && modifierIsNumeric
-            && Number.isFinite(damage.base + numericDamageModifier)
         ) {
-            return Math.ceil(damage.base + numericDamageModifier);
+            return damage.total - numericDamageModifier;
         }
         return null;
     })();
-    const damageModifierPrefix = modifierIsNumeric
-        ? numericDamageModifier >= 0
-            ? '+'
-            : ''
-        : '';
+    const resolvedDamageAmount = (() => {
+        if (typeof baseDamageAmount === 'number' && modifierIsNumeric) {
+            return Math.ceil(baseDamageAmount + numericDamageModifier);
+        }
+        if (typeof baseDamageAmount === 'number') {
+            return Math.ceil(baseDamageAmount);
+        }
+        if (typeof damage?.total === 'number' && Number.isFinite(damage.total)) {
+            return Math.ceil(damage.total);
+        }
+        return null;
+    })();
     const resolvedDefense = defense || targetsDefense || 'PD';
     const rangeDisplay = (() => {
         if (typeof range === 'string') return range;
@@ -71,6 +78,21 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
 
     const handleSave = (field, value) => {
         if (onSaveField) onSaveField(field, value);
+    };
+
+    const handleDamageTotalSave = (value) => {
+        if (!onSaveField) return;
+
+        const parsed = Number(value);
+        if (Number.isNaN(parsed)) return;
+
+        if (typeof baseDamageAmount === 'number' && Number.isFinite(baseDamageAmount)) {
+            const difference = parsed - baseDamageAmount;
+            onSaveField('damage.modifier', Number.isFinite(difference) ? difference : 0);
+            return;
+        }
+
+        onSaveField('damage.total', parsed);
     };
 
     const parseCostString = (value) => {
@@ -150,21 +172,15 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
             ):
             {' '}
             {typeof resolvedDamageAmount === 'number' ? (
-                <>
-                    {resolvedDamageAmount} ({damageModifierPrefix}
-                </>
+                <EditableField
+                    value={resolvedDamageAmount}
+                    onSave={(f, val) => handleDamageTotalSave(val)}
+                    fieldType="number"
+                    className="editable-number-field"
+                />
             ) : (
-                <>
-                    base damage {damageModifierPrefix}
-                </>
+                'damage '
             )}
-            <EditableField
-                value={damageModifier}
-                onSave={(f, val) => handleSave('damage.modifier', val)}
-                fieldType="number"
-                className="editable-description-field"
-            />
-            {typeof resolvedDamageAmount === 'number' ? ') ' : ' '}
             <EditableField
                 value={resolvedDamageType}
                 onSave={(f, val) => handleSave('damageType', val)}
