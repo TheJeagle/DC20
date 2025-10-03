@@ -340,6 +340,60 @@ const CreatureCreatorPage = ({ currentUser }) => {
     dispatch({ type: 'SET_OVERRIDES', payload: updatedOverrides });
   };
 
+  const setNestedValue = (object, path, value) => {
+    const parts = path.split('.');
+    const clone = { ...object };
+    let cursor = clone;
+    parts.slice(0, -1).forEach((part) => {
+      const existing = cursor[part];
+      cursor[part] = existing && typeof existing === 'object' ? { ...existing } : {};
+      cursor = cursor[part];
+    });
+    cursor[parts[parts.length - 1]] = value;
+    return clone;
+  };
+
+  const normalizeNumericField = (field, value) => {
+    const numericFields = [
+      'costAP',
+      'costMP',
+      'costSP',
+      'cost.ap',
+      'cost.mp',
+      'cost.sp',
+      'damageMod',
+      'saveDCMod',
+      'rangeValue',
+      'areaSize',
+      'damage',
+    ];
+    if (!numericFields.includes(field)) return value;
+    const num = parseInt(value, 10);
+    return Number.isNaN(num) ? 0 : num;
+  };
+
+  const syncLegacyFields = (feature, field, numericValue) => {
+    if (field === 'cost.ap') {
+      return { ...feature, costAP: numericValue };
+    }
+    if (field === 'cost.mp') {
+      return { ...feature, costMP: numericValue };
+    }
+    if (field === 'cost.sp') {
+      return { ...feature, costSP: numericValue };
+    }
+    if (field === 'target.text') {
+      return { ...feature, targetDescription: numericValue };
+    }
+    if (field === 'range.text') {
+      return { ...feature, range: numericValue };
+    }
+    if (field === 'defense') {
+      return { ...feature, targetsDefense: numericValue };
+    }
+    return feature;
+  };
+
   const handleActionUpdate = (actionIndex, field, value) => {
     const actionFeatures = selectedFeatures.filter((f) => (f.kind || f.category) === 'action');
     const target = actionFeatures[actionIndex];
@@ -354,144 +408,41 @@ const CreatureCreatorPage = ({ currentUser }) => {
 
     const updatedFeatures = selectedFeatures.map((feature) => {
       if (feature.id !== targetId) return feature;
-
-      if (field === 'cost') {
-        const normalizedCost = value && typeof value === 'object' && Object.keys(value).length > 0 ? value : null;
-        return { ...feature, cost: normalizedCost };
-      }
-
-      if (field.startsWith('damage.')) {
-        const [, prop] = field.split('.');
-        const currentDamage = feature.damage && typeof feature.damage === 'object' ? { ...feature.damage } : {};
-        if (prop === 'modifier') {
-          const num = parseInt(value, 10);
-          if (Number.isNaN(num)) {
-            delete currentDamage.modifier;
-          } else {
-            currentDamage.modifier = num;
-          }
-        } else if (prop === 'type') {
-          const trimmed = typeof value === 'string' ? value.trim() : '';
-          if (trimmed) {
-            currentDamage.type = trimmed;
-          } else {
-            delete currentDamage.type;
-          }
-        }
-        const cleanedDamage = Object.keys(currentDamage).length > 0 ? currentDamage : undefined;
-        return { ...feature, damage: cleanedDamage };
-      }
-
-      if (field === 'defense') {
-        const normalizedDefense = value ? value.toUpperCase() : null;
-        return { ...feature, defense: normalizedDefense };
-      }
-
-      if (field === 'range') {
-        const num = parseRangeInput(value);
-        const normalizedRange = Number.isNaN(num) ? null : Math.max(0, num);
-        const updated = { ...feature };
-        if (normalizedRange === null) {
-          delete updated.range;
-        } else {
-          updated.range = normalizedRange;
-        }
+      const normalizedValue = normalizeNumericField(field, value);
+      if (field.includes('.')) {
+        let updated = setNestedValue(feature, field, normalizedValue);
+        updated = syncLegacyFields(updated, field, normalizedValue);
         return updated;
       }
-
-      if (field === 'target') {
-        return { ...feature, target: value };
-      }
-
-      if (field === 'summary') {
-        return { ...feature, summary: value, description: value };
-      }
-
-      return { ...feature, [field]: value };
+      const updated = { ...feature, [field]: normalizedValue };
+      return syncLegacyFields(updated, field, normalizedValue);
     });
     dispatch({ type: 'SET_SELECTED_FEATURES', payload: updatedFeatures });
   };
 
   const handleDefaultActionUpdate = (actionIndex, field, value) => {
     const current = actionOverrides[actionIndex] || {};
-    const updatedOverride = { ...current };
-    const parseRangeInput = (input) => {
-      if (input === '' || input === null || typeof input === 'undefined') return null;
-      if (typeof input === 'number') return input;
-      const match = `${input}`.match(/-?\d+/);
-      return match ? parseInt(match[0], 10) : null;
-    };
-
-    if (field === 'cost') {
-      const normalizedCost = value && typeof value === 'object' && Object.keys(value).length > 0 ? value : null;
-      if (normalizedCost) {
-        updatedOverride.cost = normalizedCost;
-      } else {
-        delete updatedOverride.cost;
-      }
-    } else if (field.startsWith('damage.')) {
-      const [, prop] = field.split('.');
-      const currentDamage = updatedOverride.damage && typeof updatedOverride.damage === 'object'
-        ? { ...updatedOverride.damage }
-        : {};
-      if (prop === 'modifier') {
-        const num = parseInt(value, 10);
-        if (Number.isNaN(num)) {
-          delete currentDamage.modifier;
-        } else {
-          currentDamage.modifier = num;
-        }
-      } else if (prop === 'type') {
-        const trimmed = typeof value === 'string' ? value.trim() : '';
-        if (trimmed) {
-          currentDamage.type = trimmed;
-        } else {
-          delete currentDamage.type;
-        }
-      }
-      if (Object.keys(currentDamage).length > 0) {
-        updatedOverride.damage = currentDamage;
-      } else {
-        delete updatedOverride.damage;
-      }
-    } else if (field === 'defense') {
-      if (value) {
-        updatedOverride.defense = value.toUpperCase();
-      } else {
-        delete updatedOverride.defense;
-      }
-    } else if (field === 'range') {
-      const num = parseRangeInput(value);
-      if (Number.isNaN(num) || num === null) {
-        delete updatedOverride.range;
-      } else {
-        updatedOverride.range = Math.max(0, num);
-      }
-    } else if (field === 'target') {
-      if (value) {
-        updatedOverride.target = value;
-      } else {
-        delete updatedOverride.target;
-      }
-    } else if (field === 'summary') {
-      if (value) {
-        updatedOverride.summary = value;
-      } else {
-        delete updatedOverride.summary;
-      }
-    } else {
-      if (value !== undefined && value !== null) {
-        updatedOverride[field] = value;
-      } else {
-        delete updatedOverride[field];
-      }
+    const normalizedValue = normalizeNumericField(field, value);
+    let updatedAction = field.includes('.')
+      ? setNestedValue(current, field, normalizedValue)
+      : { ...current, [field]: normalizedValue };
+    if (field === 'cost.ap') {
+      updatedAction = { ...updatedAction, costAP: normalizedValue };
+    } else if (field === 'cost.mp') {
+      updatedAction = { ...updatedAction, costMP: normalizedValue };
+    } else if (field === 'cost.sp') {
+      updatedAction = { ...updatedAction, costSP: normalizedValue };
+    } else if (field === 'target.text') {
+      updatedAction = { ...updatedAction, targetDescription: normalizedValue };
+    } else if (field === 'range.text') {
+      updatedAction = { ...updatedAction, range: normalizedValue };
     }
 
     dispatch({
       type: 'SET_ACTION_OVERRIDES',
       payload: {
         ...actionOverrides,
-        [actionIndex]: updatedOverride,
+        [actionIndex]: updatedAction,
       },
     });
   };

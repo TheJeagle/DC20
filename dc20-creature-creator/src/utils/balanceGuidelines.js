@@ -61,8 +61,7 @@ const halfStep = (value) => Math.round(value * 2) / 2;
 
 export const getFeatureCostBudget = (level = 0, power = 'normal') => {
   const normalizedLevel = Number.isFinite(level) ? Math.max(0, level) : 0;
-  const halfNormalizedLevel = Math.floor(normalizedLevel/2);
-  const baseBudget = halfNormalizedLevel + 1; // Normal power expectation
+  const baseBudget = normalizedLevel + 2; // Normal power expectation scales directly with level
   const lowerBand = Math.max(0, baseBudget - 1);
   const upperBand = baseBudget + 1;
 

@@ -1,29 +1,25 @@
 // src/data/actionSchema.jsx
 // Schema definition for creature actions stored with a creature document
 export const creatureActionSchema = {
-  name: '',        // Display name of the action
-  kind: 'action',  // Classification such as action, reaction, apex_action, etc.
-  method: '',      // Delivery method, e.g., "Melee Martial Attack"
-  summary: '',     // Short rules text describing the action
-  cost: {
+  name: '',       // Display name of the action
+  cost: {         // Resource costs to use the action
     ap: 0,
     mp: 0,
     sp: 0,
+    summary: '',
+    special: '',
   },
-  damage: {
-    bonus: 0,     // Damage adjustment relative to the creature's base damage
+  damage: {       // Damage adjustments provided by the action
+    modifier: 0,
     type: '',
-    base: null,   // Optional absolute damage override
+    base: null,
   },
-  defense: '',     // Defense targeted, such as PD or AD
-  range: null,     // Range in spaces or descriptive string like "Self" or "Melee"
-  target: '',      // Target description or area definition
-  save: {
-    attribute: '',
-    dcMod: 0,
-    effect: '',
-  },
-  trigger: '',     // Trigger text for reactions or enhancements
-  effects: [],     // Structured additional effects (conditions, movement, etc.)
-  source: '',      // 'feature' for user-selected traits or 'default'
+  save: null,     // Save text or configuration
+  range: '',      // Range information (e.g., "Melee", "5 spaces")
+  target: '',     // Target description
+  defense: '',    // Defense targeted by the attack
+  actionType: '', // Classification like "Melee Martial Attack"
+  summary: '',    // Short rules summary of the action
+  description: '',// Text describing the action's effect
+  source: '',     // 'feature' for user selected traits or 'default'
 };

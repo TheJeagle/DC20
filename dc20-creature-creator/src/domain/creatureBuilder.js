@@ -84,120 +84,60 @@ export const applyOverrides = (creatureState, overrides = {}, actionOverrides = 
     actionOverrides && typeof actionOverrides === 'object' ? { ...actionOverrides } : {},
 });
 
-const getFeatureKind = (feature) => feature?.kind || feature?.category;
-
-const readCost = (feature, key) => {
-  if (feature?.cost && typeof feature.cost === 'object') {
-    const value = feature.cost[key];
-    if (typeof value === 'number') {
-      return value;
-    }
-    const parsed = parseInt(value, 10);
-    if (!Number.isNaN(parsed)) {
-      return parsed;
-    }
-  }
-  return feature?.[`cost${key.toUpperCase()}`] || 0;
+const toCostObject = (action = {}) => {
+  const cost = action.cost && typeof action.cost === 'object' ? action.cost : {};
+  return {
+    ap: typeof cost.ap === 'number' ? cost.ap : action.costAP || 0,
+    mp: typeof cost.mp === 'number' ? cost.mp : action.costMP || 0,
+    sp: typeof cost.sp === 'number' ? cost.sp : action.costSP || 0,
+    special: cost.special,
+    summary: cost.summary,
+  };
 };
 
-const readDamageMod = (feature) => {
-  const { damage } = feature || {};
-  if (typeof damage === 'number') {
-    return damage;
-  }
-  if (damage && typeof damage === 'object') {
-    if (typeof damage.bonus === 'number') {
-      return damage.bonus;
-    }
-  }
-  return feature?.damageMod || 0;
+const mapDisplayAction = (action = {}, source = 'default') => {
+  const cost = toCostObject(action);
+  const target = action.target?.text || action.target || action.targetDescription || action.targets || '';
+  const range =
+    (action.range && typeof action.range === 'object'
+      ? action.range.text || `${action.range.value || ''} ${action.range.unit || ''}`.trim()
+      : action.range) || '';
+
+  return {
+    name: action.name || '',
+    cost,
+    costAP: cost.ap,
+    costMP: cost.mp,
+    costSP: cost.sp,
+    damage: action.damage || { modifier: action.damageMod || 0, type: action.damageType },
+    damageMod: action.damage?.modifier || action.damageMod || 0,
+    save: action.save || null,
+    saveDCMod: action.save?.dcMod || action.saveDCMod || 0,
+    range,
+    target,
+    defense: action.defense || action.targetsDefense || '',
+    actionType: action.actionType || action.type || '',
+    description: action.summary || action.descriptionCore || action.description || '',
+    summary: action.summary || action.descriptionCore || action.description || '',
+    source,
+    id: action.id,
+  };
 };
-
-const readRange = (feature) => {
-  if (typeof feature?.range !== 'undefined' && feature.range !== null) {
-    return feature.range;
-  }
-  if (feature?.rangeValue) {
-    const unit = feature.rangeUnit ? ` ${feature.rangeUnit}` : '';
-    return `${feature.rangeValue}${unit}`.trim();
-  }
-  return feature?.range || '';
-};
-
-const readTarget = (feature) => feature?.target || feature?.targets || feature?.targetDescription || '';
-
-const readDescription = (feature) => feature?.summary || feature?.descriptionCore || feature?.description || '';
 
 const createDisplayActions = (statBlock, selectedFeatures = []) => {
-  const normalizeCost = (source = {}) => {
-    if (source.cost && typeof source.cost === 'object') {
-      return source.cost;
-    }
-    const legacy = {};
-    if (source.costAP > 0) legacy.ap = source.costAP;
-    if (source.costMP > 0) legacy.mp = source.costMP;
-    if (source.costSP > 0) legacy.sp = source.costSP;
-    return Object.keys(legacy).length > 0 ? legacy : null;
-  };
-
-  const normalizeRange = (source = {}) => {
-    if (typeof source.range === 'number') return source.range;
-    if (typeof source.rangeValue === 'number') return source.rangeValue;
-    return undefined;
-  };
-
-  const normalizeTarget = (source = {}) => source.target || source.targetDescription || source.targets || '';
-
-  const normalizeSummary = (source = {}) => source.summary || source.descriptionCore || source.description || '';
-
-  const normalizeDamage = (source = {}) => {
-    if (source.damage && typeof source.damage === 'object') {
-      return source.damage;
-    }
-    const modifier = typeof source.damageMod === 'number' ? source.damageMod : 0;
-    const type = source.damageType || null;
-    if (modifier !== 0 || type) {
-      return {
-        modifier,
-        type,
-      };
-    }
-    return undefined;
-  };
-
-  const normalizeDefense = (source = {}) => source.defense || source.targetsDefense || null;
-
-  const defaultActions = (statBlock?.raw?.DefaultAttacks || []).map((attack) => ({
-    name: attack.name,
-    cost: normalizeCost(attack),
-    damage: normalizeDamage(attack),
-    defense: normalizeDefense(attack),
-    range: normalizeRange(attack),
-    target: normalizeTarget(attack),
-    summary: normalizeSummary(attack),
-    method: attack.type || '',
-    source: 'default',
-    category: attack.category || 'action',
-    kind: attack.kind || 'action',
-  }));
+  const defaultActions = (statBlock?.raw?.DefaultAttacks || []).map((attack) =>
+    mapDisplayAction(
+      {
+        ...attack,
+        cost: attack.cost || { ap: attack.costAP || 0, mp: attack.costMP || 0, sp: attack.costSP || 0 },
+      },
+      'default',
+    ),
+  );
 
   const featureActions = (selectedFeatures || [])
-    .filter((feature) => feature && getFeatureKind(feature) === 'action')
-    .map((feature) => ({
-      name: feature.name,
-      cost: normalizeCost(feature),
-      damage: normalizeDamage(feature),
-      defense: normalizeDefense(feature),
-      range: normalizeRange(feature),
-      target: normalizeTarget(feature),
-      summary: normalizeSummary(feature),
-      method: feature.method || feature.actionType || '',
-      source: 'feature',
-      id: feature.id,
-      category: feature.category,
-      kind: feature.kind || feature.category,
-      trigger: feature.trigger || null,
-    }));
+    .filter((feature) => feature && feature.category === 'action')
+    .map((feature) => mapDisplayAction(feature, 'feature'));
 
   return {
     defaultActions,
