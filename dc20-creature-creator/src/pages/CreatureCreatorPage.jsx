@@ -69,10 +69,12 @@ const CreatureCreatorPage = ({ currentUser }) => {
 
   const [allFeatures, setAllFeatures] = useState([]);
   const [isLoadingAllFeatures, setIsLoadingAllFeatures] = useState(true);
+  const [featureLoadError, setFeatureLoadError] = useState(null);
   const [availableTypeFeatures, setAvailableTypeFeatures] = useState([]);
   const [availableRoleFeatures, setAvailableRoleFeatures] = useState([]);
   const [availableApexActions, setAvailableApexActions] = useState([]);
   const [isCreatingFeature, setIsCreatingFeature] = useState(false);
+  const [customFeatureSaveError, setCustomFeatureSaveError] = useState(null);
 
   const statBlockRef = useRef(null);
 
@@ -185,6 +187,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
 
     const fetchAllFeaturesData = async () => {
       setIsLoadingAllFeatures(true);
+      setFeatureLoadError(null);
       try {
         const featuresCollectionRef = collection(db, 'features');
         const q = query(featuresCollectionRef, orderBy('name'));
@@ -199,6 +202,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
         setAvailableApexActions(featuresData.filter((f) => f.kind === 'apex_action'));
       } catch (error) {
         console.error('Error fetching all features:', error);
+        setFeatureLoadError('We were unable to load features. Please refresh the page or try again shortly.');
       } finally {
         setIsLoadingAllFeatures(false);
       }
@@ -459,12 +463,14 @@ const CreatureCreatorPage = ({ currentUser }) => {
 
   const handleSaveCustomFeatureToDBAndAddToSelection = async (newFeatureData) => {
     const featureToSave = { ...newFeatureData, createdAt: serverTimestamp() };
+    setCustomFeatureSaveError(null);
     try {
       const docRef = await addDoc(collection(db, 'userMadeFeatures'), featureToSave);
       handleAddCustomFeatureToSelection({ ...newFeatureData, id: docRef.id });
       return true;
     } catch (error) {
       console.error('Error saving custom feature:', error);
+      setCustomFeatureSaveError('We could not save your custom feature. Please check your connection and try again.');
       return false;
     }
   };
@@ -540,6 +546,16 @@ const CreatureCreatorPage = ({ currentUser }) => {
   return (
     <>
       <div className="app-container">
+        {featureLoadError && (
+          <div className="error-alert" role="alert" aria-live="assertive">
+            {featureLoadError}
+          </div>
+        )}
+        {customFeatureSaveError && (
+          <div className="error-alert" role="alert" aria-live="assertive">
+            {customFeatureSaveError}
+          </div>
+        )}
         <InputPanel
           inputs={inputs}
           onUpdateInput={(key, value) => dispatch({ type: 'SET_INPUT', payload: { key, value } })}
