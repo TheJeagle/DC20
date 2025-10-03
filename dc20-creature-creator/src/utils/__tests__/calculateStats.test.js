@@ -45,18 +45,15 @@ describe('calculateCreatureStats', () => {
 
     const action = {
       name: 'Fiery Strike',
-      category: 'action',
-      actionType: 'Melee Spell Attack',
-      costAP: 1,
-      damageMod: 2,
-      saveAttribute: 'Mig',
-      saveDCMod: 2,
-      damageType: 'fire',
-      targetsDefense: 'PD',
-      rangeValue: 1,
-      rangeUnit: 'space',
-      targetDescription: '1 creature',
-      descriptionCore: 'Strike with fire.'
+      kind: 'action',
+      method: 'Melee Spell Attack',
+      cost: { ap: 1 },
+      damage: { bonus: 2, type: 'fire', base: null },
+      save: { attribute: 'Mig', dcMod: 2, effect: '' },
+      defense: 'PD',
+      range: 'melee',
+      target: '1 creature',
+      summary: 'Strike with fire.'
     };
 
     const result = calculateCreatureStats(inputs, [action], {});
@@ -106,13 +103,12 @@ describe('calculateCreatureStats', () => {
     const apexAction = {
       id: 'apex_test_action',
       name: 'Tail Sweep',
-      category: 'apex_action',
-      costAP: 1,
-      descriptionCore: 'Swipe your tail at a foe.',
-      actionType: 'Melee Attack',
-      rangeValue: 1,
-      rangeUnit: 'space',
-      targetDescription: '1 creature'
+      kind: 'apex_action',
+      cost: { ap: 1 },
+      summary: 'Swipe your tail at a foe.',
+      method: 'Melee Attack',
+      range: 'melee',
+      target: '1 creature'
     };
 
     const result = calculateCreatureStats(inputs, [apexAction], {});

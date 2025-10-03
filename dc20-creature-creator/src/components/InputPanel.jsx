@@ -46,7 +46,7 @@ const InputPanel = ({
     const filtered = allFeatures.filter((feature) => {
       if (!feature || !feature.name) return false;
       if (feature.name.toLowerCase().includes(lowerSearchTerm)) return true;
-      if (feature.category && feature.category.toLowerCase().includes(lowerSearchTerm)) return true;
+      if (feature.kind && feature.kind.toLowerCase().includes(lowerSearchTerm)) return true;
       if (Array.isArray(feature.tags) && feature.tags.some((tag) => tag.toLowerCase().includes(lowerSearchTerm))) return true;
       return false;
     });
@@ -74,13 +74,18 @@ const InputPanel = ({
           const isChecked = selectedFeatures.some((sf) => sf.id === feature.id);
           const normalizedBalance = normalizeFeatureBalanceCost(feature);
           const displayBalance = Number.isInteger(normalizedBalance) ? normalizedBalance : normalizedBalance.toFixed(1);
+          const kind = feature.kind || feature.category || 'feature';
+          const costEntries = Object.entries(feature.cost || {})
+            .filter(([, value]) => typeof value === 'number' && value > 0)
+            .map(([resource, value]) => `${value} ${resource.toUpperCase()}`);
+          const costLabel = costEntries.length > 0 ? costEntries.join(' + ') : null;
           return (
             <li key={`${listContextKey}-${feature.id}`}>
-              <label title={feature.description}>
+              <label title={feature.summary || feature.description}>
                 <input type="checkbox" checked={isChecked} onChange={(e) => onFeatureSelect(feature, e.target.checked)} />
                 <strong className="feature-name">{feature.name}</strong>
-                <span className="feature-category">({feature.category})</span>
-                {feature.cost && <span className="feature-cost"> - Cost: {feature.cost}</span>}
+                <span className="feature-category">({kind})</span>
+                {costLabel && <span className="feature-cost"> - Cost: {costLabel}</span>}
                 <span className="feature-balance-cost">• Feature Cost: {displayBalance}</span>
               </label>
             </li>

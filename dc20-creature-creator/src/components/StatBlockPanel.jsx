@@ -48,23 +48,23 @@ const StatBlockPanel = forwardRef(
                 },
             }))
             : generatedDefaultActions.map((action, index) => {
-                const range = action.rangeValue
-                    ? `${action.rangeValue} ${action.rangeUnit || ''}`.trim()
-                    : action.range || '';
+                const cost = action.cost || {};
+                const damage = action.damage || {};
+                const rangeText = action.range || '';
 
                 return {
                     key: `generated-default-attack-${index}`,
                     action: {
                         name: action.name,
-                        costAP: action.costAP ?? 0,
-                        costMP: action.costMP ?? 0,
-                        damage: action.baseDamageOverride ?? 0,
-                        calculatedDamage: action.baseDamageOverride ?? 0,
-                        damageType: action.damageType ?? 'damage',
-                        targetsDefense: action.targetsDefense ?? 'PD',
-                        targetDescription: action.targetDescription ?? '',
-                        range,
-                        details: action.descriptionCore || action.description || '',
+                        costAP: cost.ap ?? action.costAP ?? 0,
+                        costMP: cost.mp ?? action.costMP ?? 0,
+                        damage: damage.base ?? action.baseDamageOverride ?? 0,
+                        calculatedDamage: damage.base ?? action.baseDamageOverride ?? 0,
+                        damageType: damage.type ?? action.damageType ?? 'damage',
+                        targetsDefense: action.defense ?? action.targetsDefense ?? 'PD',
+                        targetDescription: action.target ?? action.targetDescription ?? '',
+                        range: rangeText,
+                        details: action.summary || action.descriptionCore || action.description || '',
                     },
                 };
             });

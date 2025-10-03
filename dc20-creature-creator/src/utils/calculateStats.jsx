@@ -165,22 +165,28 @@ export const generateDefaultActionFeatures = (inputs) => {
 
   return defaultAttacks.map((attack, idx) => {
     const { rangeValue, rangeUnit } = parseRange(attack.range);
+    const cost = attack.costAP > 0 ? { ap: attack.costAP } : {};
     return {
       id: `default-${idx}`,
       name: attack.name,
-      category: 'action',
-      actionType: attack.type ? `${attack.type} Attack` : '',
-      costAP: attack.costAP,
-      costMP: 0,
-      costSP: 0,
-      damageMod: 0,
-      damageType: attack.damageType,
-      targetsDefense: attack.targetsDefense,
-      rangeValue,
-      rangeUnit,
-      targetDescription: attack.targetDescription,
-      descriptionCore: describeAttack(attack),
-      baseDamageOverride: attack.damage,
+      kind: 'action',
+      method: attack.type ? `${attack.type} Attack` : '',
+      cost,
+      damage: {
+        bonus: 0,
+        type: attack.damageType,
+        base: attack.damage,
+      },
+      defense: attack.targetsDefense,
+      range: rangeValue > 0 ? `${rangeValue} ${rangeUnit}`.trim() : attack.range,
+      target: attack.targetDescription,
+      summary: describeAttack(attack),
+      save: {
+        attribute: '',
+        dcMod: 0,
+        effect: '',
+      },
+      tags: ['default'],
     };
   });
 };

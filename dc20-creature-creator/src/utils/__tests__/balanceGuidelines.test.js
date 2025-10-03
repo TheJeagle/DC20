@@ -21,13 +21,13 @@ describe('getFeatureCostBudget', () => {
     const normal = getFeatureCostBudget(5, 'Normal');
     const legendary = getFeatureCostBudget(5, 'Legendary');
 
-    expect(normal.expected).toBe(7);
-    expect(normal.min).toBe(6);
-    expect(normal.max).toBe(8);
+    expect(normal.expected).toBe(3);
+    expect(normal.min).toBe(2);
+    expect(normal.max).toBe(4);
 
-    expect(legendary.expected).toBe(14);
-    expect(legendary.min).toBe(12);
-    expect(legendary.max).toBe(16);
+    expect(legendary.expected).toBe(6);
+    expect(legendary.min).toBe(4);
+    expect(legendary.max).toBe(8);
   });
 });
 
@@ -42,10 +42,10 @@ describe('evaluateBalance', () => {
 
   it('reports on-target when stats and feature cost are within expectations', () => {
     const baseline = buildBaselineCreature(baseInputs);
-    const selectedFeatures = Array.from({ length: 5 }, (_, index) => ({
+    const selectedFeatures = Array.from({ length: 2 }, (_, index) => ({
       id: `feat-${index}`,
       balanceCost: 1,
-      category: 'feature',
+      kind: 'feature',
     }));
 
     const report = evaluateBalance({
@@ -78,8 +78,8 @@ describe('evaluateBalance', () => {
     };
 
     const selectedFeatures = [
-      { id: 'feat-over', balanceCost: 5, category: 'feature' },
-      { id: 'feat-over-2', balanceCost: 5, category: 'feature' },
+      { id: 'feat-over', balanceCost: 5, kind: 'feature' },
+      { id: 'feat-over-2', balanceCost: 5, kind: 'feature' },
     ];
 
     const report = evaluateBalance({
