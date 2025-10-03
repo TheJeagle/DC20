@@ -84,6 +84,50 @@ export const applyOverrides = (creatureState, overrides = {}, actionOverrides = 
     actionOverrides && typeof actionOverrides === 'object' ? { ...actionOverrides } : {},
 });
 
+const getFeatureKind = (feature) => feature?.kind || feature?.category;
+
+const readCost = (feature, key) => {
+  if (feature?.cost && typeof feature.cost === 'object') {
+    const value = feature.cost[key];
+    if (typeof value === 'number') {
+      return value;
+    }
+    const parsed = parseInt(value, 10);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return feature?.[`cost${key.toUpperCase()}`] || 0;
+};
+
+const readDamageMod = (feature) => {
+  const { damage } = feature || {};
+  if (typeof damage === 'number') {
+    return damage;
+  }
+  if (damage && typeof damage === 'object') {
+    if (typeof damage.bonus === 'number') {
+      return damage.bonus;
+    }
+  }
+  return feature?.damageMod || 0;
+};
+
+const readRange = (feature) => {
+  if (typeof feature?.range !== 'undefined' && feature.range !== null) {
+    return feature.range;
+  }
+  if (feature?.rangeValue) {
+    const unit = feature.rangeUnit ? ` ${feature.rangeUnit}` : '';
+    return `${feature.rangeValue}${unit}`.trim();
+  }
+  return feature?.range || '';
+};
+
+const readTarget = (feature) => feature?.target || feature?.targets || feature?.targetDescription || '';
+
+const readDescription = (feature) => feature?.summary || feature?.descriptionCore || feature?.description || '';
+
 const createDisplayActions = (statBlock, selectedFeatures = []) => {
   const normalizeCost = (source = {}) => {
     if (source.cost && typeof source.cost === 'object') {
@@ -138,7 +182,7 @@ const createDisplayActions = (statBlock, selectedFeatures = []) => {
   }));
 
   const featureActions = (selectedFeatures || [])
-    .filter((feature) => feature && feature.category === 'action')
+    .filter((feature) => feature && getFeatureKind(feature) === 'action')
     .map((feature) => ({
       name: feature.name,
       cost: normalizeCost(feature),

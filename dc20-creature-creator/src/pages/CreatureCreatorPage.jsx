@@ -100,18 +100,103 @@ const CreatureCreatorPage = ({ currentUser }) => {
   }, [creatureState]);
 
   useEffect(() => {
+    const normalizeFetchedFeature = (feature) => {
+      const cost = {};
+      if (feature.cost && typeof feature.cost === 'object' && !Array.isArray(feature.cost)) {
+        Object.entries(feature.cost).forEach(([resource, value]) => {
+          const numeric = typeof value === 'number' ? value : parseInt(value, 10);
+          if (!Number.isNaN(numeric) && numeric > 0) {
+            cost[resource] = numeric;
+          }
+        });
+      } else if (typeof feature.cost === 'string') {
+        const apMatch = feature.cost.match(/(\d+)\s*AP/i);
+        const mpMatch = feature.cost.match(/(\d+)\s*MP/i);
+        const spMatch = feature.cost.match(/(\d+)\s*SP/i);
+        if (apMatch) cost.ap = parseInt(apMatch[1], 10);
+        if (mpMatch) cost.mp = parseInt(mpMatch[1], 10);
+        if (spMatch) cost.sp = parseInt(spMatch[1], 10);
+      } else {
+        ['ap', 'mp', 'sp'].forEach((key) => {
+          const legacy = feature[`cost${key.toUpperCase()}`];
+          const numeric = typeof legacy === 'number' ? legacy : parseInt(legacy, 10);
+          if (!Number.isNaN(numeric) && numeric > 0) {
+            cost[key] = numeric;
+          }
+        });
+      }
+
+      const damage = feature.damage || {};
+      const normalizedDamage =
+        typeof damage === 'object'
+          ? {
+              bonus:
+                typeof damage.bonus === 'number'
+                  ? damage.bonus
+                  : typeof feature.damageMod === 'number'
+                  ? feature.damageMod
+                  : 0,
+              type: damage.type || feature.damageType || '',
+              base: Object.prototype.hasOwnProperty.call(damage, 'base')
+                ? damage.base
+                : feature.baseDamageOverride ?? null,
+            }
+          : {
+              bonus: typeof damage === 'number' ? damage : feature.damageMod || 0,
+              type: feature.damageType || '',
+              base: feature.baseDamageOverride ?? null,
+            };
+
+      const save = feature.save || {};
+      const normalizedSave = {
+        attribute: save.attribute || feature.saveAttribute || '',
+        dcMod: typeof save.dcMod === 'number' ? save.dcMod : feature.saveDCMod || 0,
+        effect: save.effect || feature.saveEffect || '',
+      };
+
+      const summary = feature.summary || feature.descriptionCore || feature.description || '';
+      const method = feature.method || feature.actionType || '';
+      const range =
+        typeof feature.range !== 'undefined' && feature.range !== null
+          ? typeof feature.range === 'number'
+            ? `${feature.range}`
+            : feature.range
+          : feature.rangeValue
+          ? `${feature.rangeValue}${feature.rangeUnit ? ` ${feature.rangeUnit}` : ''}`.trim()
+          : '';
+      const target = (feature.target || feature.targetDescription || '').toString().trim();
+      const defense = (feature.defense || feature.targetsDefense || '').toString().trim();
+      const effects = Array.isArray(feature.effects) ? feature.effects : [];
+
+      return {
+        ...feature,
+        kind: feature.kind || feature.category || 'feature',
+        cost,
+        damage: normalizedDamage,
+        save: normalizedSave,
+        summary: summary.trim(),
+        method,
+        range: range.trim(),
+        target,
+        defense,
+        effects,
+      };
+    };
+
     const fetchAllFeaturesData = async () => {
       setIsLoadingAllFeatures(true);
       try {
         const featuresCollectionRef = collection(db, 'features');
-        const q = query(featuresCollectionRef, orderBy('category'), orderBy('name'));
+        const q = query(featuresCollectionRef, orderBy('name'));
         const querySnapshot = await getDocs(q);
-        const featuresData = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        const featuresData = querySnapshot.docs.map((doc) =>
+          normalizeFetchedFeature({
+            id: doc.id,
+            ...doc.data(),
+          })
+        );
         setAllFeatures(featuresData);
-        setAvailableApexActions(featuresData.filter((f) => f.category === 'apex_action'));
+        setAvailableApexActions(featuresData.filter((f) => f.kind === 'apex_action'));
       } catch (error) {
         console.error('Error fetching all features:', error);
       } finally {
@@ -256,7 +341,7 @@ const CreatureCreatorPage = ({ currentUser }) => {
   };
 
   const handleActionUpdate = (actionIndex, field, value) => {
-    const actionFeatures = selectedFeatures.filter((f) => f.category === 'action');
+    const actionFeatures = selectedFeatures.filter((f) => (f.kind || f.category) === 'action');
     const target = actionFeatures[actionIndex];
     if (!target) return;
     const targetId = target.id;

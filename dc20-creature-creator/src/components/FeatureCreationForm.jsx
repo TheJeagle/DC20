@@ -1,15 +1,14 @@
 // src/components/FeatureCreationForm.jsx
 import React, { useState, useEffect } from 'react';
-import './FeatureCreationForm.css'; // Make sure to create/style this
+import './FeatureCreationForm.css';
 
-const FEATURE_CATEGORIES = [
-    { id: 'feature', label: 'Passive Feature' },
-    { id: 'action', label: 'Action' },
-    { id: 'attack_enhancement', label: 'Attack Enhancement' },
-    { id: 'reaction', label: 'Reaction' },
-    // Consider adding 'sense', 'resistance', 'immunity', 'language' if users *can* create these.
-    // If not, keep them as admin-created only. For now, I'll stick to your core list.
+const FEATURE_KINDS = [
+  { id: 'feature', label: 'Passive Feature' },
+  { id: 'action', label: 'Action' },
+  { id: 'attack_enhancement', label: 'Attack Enhancement' },
+  { id: 'reaction', label: 'Reaction' },
 ];
+
 
 const METHOD_OPTIONS = [
     { id: '', label: 'Select Method...' },
@@ -31,20 +30,24 @@ const SAVE_ATTRIBUTES = [
     { id: 'Charisma', label: 'Charisma' },
     { id: 'Physical', label: 'Physical' },
     { id: 'Mental', label: 'Mental' },
+
 ];
 
 const DURATIONS = [
-    { id: '', label: 'Instant / Until Triggered / Special' },
-    { id: 'end of your next turn', label: "End of your next turn" },
-    { id: 'start of your next turn', label: "Start of your next turn" },
-    { id: 'end of its next turn', label: "End of target's next turn" }, // 'its' refers to target
-    { id: 'start of its next turn', label: "Start of target's next turn" },
-    { id: '1 round', label: "1 Round" },
-    { id: '1 minute', label: "1 Minute" },
-    { id: '1 minute (target saves each turn)', label: "1 Minute (target saves each turn)" },
-    // Add more standard durations
+  { id: '', label: 'Instant / Until Triggered / Special' },
+  { id: 'end of your next turn', label: 'End of your next turn' },
+  { id: 'start of your next turn', label: 'Start of your next turn' },
+  { id: 'end of its next turn', label: "End of target's next turn" },
+  { id: 'start of its next turn', label: "Start of target's next turn" },
+  { id: '1 round', label: '1 Round' },
+  { id: '1 minute', label: '1 Minute' },
+  { id: '1 minute (target saves each turn)', label: '1 Minute (target saves each turn)' },
 ];
 
+const parseNumberOrZero = (value) => {
+  const parsed = parseInt(value, 10);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
 
 const FeatureCreationForm = ({ onCancel, onAddOnlyToCreature, onSaveAndAddToCreature }) => {
     // --- Form State ---
@@ -177,28 +180,37 @@ const FeatureCreationForm = ({ onCancel, onAddOnlyToCreature, onSaveAndAddToCrea
         return featureData;
     };
 
-    const handleAdd = () => {
-        if (!name.trim() || !category) { alert("Name and Category are required."); return; }
-        const featureData = constructFeatureData();
-        onAddOnlyToCreature(featureData);
-        resetForm();
-        onCancel();
+    if (Object.keys(cost).length > 0 || kind === 'action' || kind === 'reaction' || kind === 'attack_enhancement') {
+      featureData.cost = cost;
+    }
+
+    const damageData = {
+      bonus: damageBonusNumber,
+      type: damageType.trim(),
+      base: null,
     };
 
-    const handleSaveAndAdd = async () => {
-        if (!name.trim() || !category) { alert("Name and Category are required."); return; }
-        const featureData = constructFeatureData();
-        const success = await onSaveAndAddToCreature(featureData);
-        if (success) {
-            resetForm();
-            onCancel();
-        }
+    const isAttackLike = kind === 'action' && method && (method.includes('Attack') || method.includes('Spell'));
+    if (isAttackLike || (kind === 'attack_enhancement' && (damageBonus || damageType))) {
+      featureData.damage = damageData;
+    }
+
+    const saveData = {
+      attribute: saveAttribute,
+      dcMod: 0,
+      effect: saveEffect.trim(),
     };
 
-    // --- Conditional rendering flags ---
-    const isAction = category === 'action';
-    const isAttackEnhancement = category === 'attack_enhancement';
-    const isReaction = category === 'reaction';
+    if (kind !== 'feature') {
+      featureData.method = method;
+      featureData.range = range.trim();
+      featureData.target = target.trim();
+      if (defense) {
+        featureData.defense = defense;
+      }
+      featureData.save = saveData;
+      featureData.trigger = trigger.trim();
+    }
 
     const methodLower = (method || '').toLowerCase();
     const isAttackMethod = methodLower.includes('attack') || methodLower.includes('spell');
@@ -212,45 +224,236 @@ const FeatureCreationForm = ({ onCancel, onAddOnlyToCreature, onSaveAndAddToCrea
     const showSaveFields = isAction || isAttackEnhancement || isReaction;
     const showDurationField = isAction || isAttackEnhancement || isReaction || conditionApplied;
 
+    return featureData;
+  };
 
-    return (
-        <div className="feature-creation-form">
-            <h3>Create Custom Trait</h3> {/* More generic title */}
+  const handleAdd = () => {
+    const data = constructFeatureData();
+    onAddOnlyToCreature?.(data);
+    resetForm();
+  };
 
-            <div className="form-group">
-                <label htmlFor="customFeatureName">Name:</label>
-                <input type="text" id="customFeatureName" value={name} onChange={e => setName(e.target.value)} placeholder="Unique Name" />
+  const handleSaveAndAdd = async () => {
+    const data = constructFeatureData();
+    const success = await onSaveAndAddToCreature?.(data);
+    if (success) {
+      resetForm();
+    }
+  };
+
+  const isAction = kind === 'action';
+  const isAttackEnhancement = kind === 'attack_enhancement';
+  const isReaction = kind === 'reaction';
+
+  const showCostFields = isAction || isAttackEnhancement || isReaction;
+  const showMethodField = isAction || isReaction;
+  const showAttackSpecificFields = isAction && method && (method.includes('Attack') || method.includes('Spell'));
+  const showHealingField = isAction && method === 'Healing';
+  const showSaveFields = isAction || isAttackEnhancement || isReaction;
+  const showDurationField = (isAction || isAttackEnhancement || isReaction) && !!conditionApplied;
+  const showTriggerField = isReaction || isAttackEnhancement;
+
+  return (
+    <div className="feature-creation-form">
+      <h3>Create Custom Trait</h3>
+
+      <div className="form-group">
+        <label htmlFor="customFeatureName">Name:</label>
+        <input
+          type="text"
+          id="customFeatureName"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Unique Name"
+        />
+      </div>
+
+      <div className="form-group button-group">
+        <label>Category:</label>
+        {FEATURE_KINDS.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            className={`category-button ${kind === option.id ? 'active' : ''}`}
+            onClick={() => setKind(option.id)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="customFeatureDesc">Summary:</label>
+        <textarea
+          id="customFeatureDesc"
+          value={summary}
+          onChange={(e) => setSummary(e.target.value)}
+          rows="3"
+          placeholder="What this trait does..."
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="customFeatureBalanceCost">Balance Cost:</label>
+        <input
+          type="number"
+          id="customFeatureBalanceCost"
+          min="0"
+          step="0.5"
+          value={balanceCost}
+          onChange={(e) => setBalanceCost(e.target.value)}
+        />
+        <small className="form-helper-text">
+          Set to 1 for a standard-strength feature. Increase the value for stronger effects.
+        </small>
+      </div>
+
+      {showCostFields && (
+        <fieldset className="form-section">
+          <legend>Costs</legend>
+          <div className="cost-inputs">
+            <div>
+              <label>AP:</label>
+              <input type="number" min="0" value={costAP} onChange={(e) => setCostAP(e.target.value)} />
             </div>
-
-            <div className="form-group button-group">
-                <label>Category:</label>
-                {FEATURE_CATEGORIES.map(cat => (
-                    <button
-                        key={cat.id} type="button"
-                        className={`category-button ${category === cat.id ? 'active' : ''}`}
-                        onClick={() => setCategory(cat.id)}
-                    >
-                        {cat.label}
-                    </button>
-                ))}
+            <div>
+              <label>MP:</label>
+              <input type="number" min="0" value={costMP} onChange={(e) => setCostMP(e.target.value)} />
             </div>
-
-            <div className="form-group">
-                <label htmlFor="customFeatureDesc">Description:</label>
-                <textarea id="customFeatureDesc" value={description} onChange={e => setDescription(e.target.value)} rows="3" placeholder="What this trait does..."></textarea>
+            <div>
+              <label>SP:</label>
+              <input type="number" min="0" value={costSP} onChange={(e) => setCostSP(e.target.value)} />
             </div>
+          </div>
+        </fieldset>
+      )}
 
-            <div className="form-group">
-                <label htmlFor="customFeatureBalanceCost">Balance Cost:</label>
+      {showMethodField && (
+        <fieldset className="form-section">
+          <legend>Action Details</legend>
+          <div className="form-group">
+            <label>Method:</label>
+            <select value={method} onChange={(e) => setMethod(e.target.value)}>
+              {ACTION_METHODS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Range:</label>
+            <input
+              type="text"
+              value={range}
+              onChange={(e) => setRange(e.target.value)}
+              placeholder="Melee, 5 spaces, Self"
+            />
+          </div>
+          <div className="form-group">
+            <label>Defense Targeted:</label>
+            <select value={defense} onChange={(e) => setDefense(e.target.value)}>
+              <option value="">Select...</option>
+              <option value="PD">PD</option>
+              <option value="AD">AD</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Target:</label>
+            <input
+              type="text"
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              placeholder="1 creature, Cone, All allies"
+            />
+          </div>
+        </fieldset>
+      )}
+
+      {showAttackSpecificFields && (
+        <fieldset className="form-section">
+          <legend>Attack Properties</legend>
+          <div className="form-group">
+            <label>Damage Modifier:</label>
+            <input
+              type="number"
+              value={damageBonus}
+              onChange={(e) => setDamageBonus(e.target.value)}
+              placeholder="0, 1, -2"
+            />
+          </div>
+          <div className="form-group">
+            <label>Damage Type:</label>
+            <input
+              type="text"
+              value={damageType}
+              onChange={(e) => setDamageType(e.target.value)}
+              placeholder="physical, fire"
+            />
+          </div>
+        </fieldset>
+      )}
+
+      {showHealingField && (
+        <fieldset className="form-section">
+          <legend>Healing Properties</legend>
+          <div className="form-group">
+            <label>Healing Amount:</label>
+            <input
+              type="text"
+              value={healingAmount}
+              onChange={(e) => setHealingAmount(e.target.value)}
+              placeholder="5, MIG Mod"
+            />
+          </div>
+        </fieldset>
+      )}
+
+      {(showSaveFields || showDurationField || showTriggerField) && (
+        <fieldset className="form-section">
+          <legend>Effects & Duration</legend>
+          {showSaveFields && (
+            <>
+              <div className="form-group">
+                <label>Target Save Attribute:</label>
+                <select value={saveAttribute} onChange={(e) => setSaveAttribute(e.target.value)}>
+                  {SAVE_ATTRIBUTES.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Effect on Save:</label>
                 <input
-                    type="number"
-                    id="customFeatureBalanceCost"
-                    min="0"
-                    step="0.5"
-                    value={balanceCost}
-                    onChange={(e) => setBalanceCost(e.target.value)}
+                  type="text"
+                  value={saveEffect}
+                  onChange={(e) => setSaveEffect(e.target.value)}
+                  placeholder="half damage, negates"
                 />
-                <small className="form-helper-text">Set to 1 for a standard-strength feature. Increase the value for stronger effects.</small>
+              </div>
+              <div className="form-group">
+                <label>Condition Applied:</label>
+                <input
+                  type="text"
+                  value={conditionApplied}
+                  onChange={(e) => setConditionApplied(e.target.value)}
+                  placeholder="Stunned, Prone"
+                />
+              </div>
+            </>
+          )}
+          {showDurationField && (
+            <div className="form-group">
+              <label>Duration:</label>
+              <select value={duration} onChange={(e) => setDuration(e.target.value)}>
+                {DURATIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* --- Cost Inputs --- */}
@@ -391,17 +594,41 @@ const FeatureCreationForm = ({ onCancel, onAddOnlyToCreature, onSaveAndAddToCrea
             )}
 
             <div className="form-group">
-                <label>Tags (comma-separated):</label>
-                <input type="text" value={tags} onChange={e => setTags(e.target.value)} placeholder="undead, buff, magical" />
+              <label>Trigger:</label>
+              <input
+                type="text"
+                value={trigger}
+                onChange={(e) => setTrigger(e.target.value)}
+                placeholder="When hit, After you attack, Reaction to..."
+              />
             </div>
+          )}
+        </fieldset>
+      )}
 
-            <div className="form-actions">
-                <button type="button" onClick={onCancel} className="button-cancel">Cancel</button>
-                <button type="button" onClick={handleAdd} className="button-add">Add to Creature</button>
-                <button type="button" onClick={handleSaveAndAdd} className="button-save">Save & Add to Creature</button>
-            </div>
-        </div>
-    );
+      <div className="form-group">
+        <label>Tags (comma-separated):</label>
+        <input
+          type="text"
+          value={tags}
+          onChange={(e) => setTags(e.target.value)}
+          placeholder="undead, buff, magical"
+        />
+      </div>
+
+      <div className="form-actions">
+        <button type="button" onClick={onCancel} className="button-cancel">
+          Cancel
+        </button>
+        <button type="button" onClick={handleAdd} className="button-add">
+          Add to Creature
+        </button>
+        <button type="button" onClick={handleSaveAndAdd} className="button-save">
+          Save & Add to Creature
+        </button>
+      </div>
+    </div>
+  );
 };
 
 export default FeatureCreationForm;
