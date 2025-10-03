@@ -56,6 +56,24 @@ const creatureStateReducer = (state, action) => {
 
 const initializeCreatureState = () => normalizeCreatureState(loadCreatureFromSession());
 
+const filterFeaturesByTag = (features, tag) => {
+  if (!Array.isArray(features) || !tag) {
+    return [];
+  }
+
+  const normalizedTag = `${tag}`.toLowerCase();
+
+  return features.filter((feature) => {
+    if (!feature || !Array.isArray(feature.tags)) {
+      return false;
+    }
+
+    return feature.tags.some(
+      (featureTag) => typeof featureTag === 'string' && featureTag.toLowerCase() === normalizedTag
+    );
+  });
+};
+
 const CreatureCreatorPage = ({ currentUser }) => {
   const [creatureState, dispatch] = useReducer(creatureStateReducer, undefined, initializeCreatureState);
   const { inputs, selectedFeatures, overrides, actionOverrides } = creatureState;
@@ -215,12 +233,8 @@ const CreatureCreatorPage = ({ currentUser }) => {
       setAvailableTypeFeatures([]);
       return;
     }
-    if (inputs?.type && allFeatures.length > 0) {
-      const lowerCaseType = inputs.type.toLowerCase();
-      const filtered = allFeatures.filter(
-        (feature) => Array.isArray(feature.tags) && feature.tags.some((tag) => tag.toLowerCase() === lowerCaseType)
-      );
-      setAvailableTypeFeatures(filtered);
+    if (inputs?.type) {
+      setAvailableTypeFeatures(filterFeaturesByTag(allFeatures, inputs.type));
     } else {
       setAvailableTypeFeatures([]);
     }
@@ -231,12 +245,8 @@ const CreatureCreatorPage = ({ currentUser }) => {
       setAvailableRoleFeatures([]);
       return;
     }
-    if (inputs?.role && inputs.role.toLowerCase() !== 'none' && allFeatures.length > 0) {
-      const lowerCaseRole = inputs.role.toLowerCase();
-      const filtered = allFeatures.filter(
-        (feature) => Array.isArray(feature.tags) && feature.tags.some((tag) => tag.toLowerCase() === lowerCaseRole)
-      );
-      setAvailableRoleFeatures(filtered);
+    if (inputs?.role && inputs.role.toLowerCase() !== 'none') {
+      setAvailableRoleFeatures(filterFeaturesByTag(allFeatures, inputs.role));
     } else {
       setAvailableRoleFeatures([]);
     }
