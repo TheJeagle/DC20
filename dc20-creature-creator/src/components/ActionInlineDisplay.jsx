@@ -31,6 +31,29 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
         if (typeof action.damageMod === 'string') return action.damageMod;
         return 0;
     })();
+    const numericDamageModifier = Number(damageModifier);
+    const modifierIsNumeric = !Number.isNaN(numericDamageModifier);
+    const resolvedDamageAmount = (() => {
+        if (typeof calculatedDamage === 'number' && Number.isFinite(calculatedDamage)) {
+            return calculatedDamage;
+        }
+        if (typeof damage?.total === 'number' && Number.isFinite(damage.total)) {
+            return damage.total;
+        }
+        if (
+            typeof damage?.base === 'number'
+            && modifierIsNumeric
+            && Number.isFinite(damage.base + numericDamageModifier)
+        ) {
+            return Math.ceil(damage.base + numericDamageModifier);
+        }
+        return null;
+    })();
+    const damageModifierPrefix = modifierIsNumeric
+        ? numericDamageModifier >= 0
+            ? '+'
+            : ''
+        : '';
     const resolvedDefense = defense || targetsDefense || 'PD';
     const rangeDisplay = (() => {
         if (typeof range === 'string') return range;
@@ -126,13 +149,22 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
             <strong>{renderCost()}</strong>
             ):
             {' '}
-            base damage {Number(damageModifier) >= 0 ? '+' : ''}
+            {typeof resolvedDamageAmount === 'number' ? (
+                <>
+                    {resolvedDamageAmount} ({damageModifierPrefix}
+                </>
+            ) : (
+                <>
+                    base damage {damageModifierPrefix}
+                </>
+            )}
             <EditableField
                 value={damageModifier}
                 onSave={(f, val) => handleSave('damage.modifier', val)}
                 fieldType="number"
                 className="editable-description-field"
-            />{' '}
+            />
+            {typeof resolvedDamageAmount === 'number' ? ') ' : ' '}
             <EditableField
                 value={resolvedDamageType}
                 onSave={(f, val) => handleSave('damageType', val)}
