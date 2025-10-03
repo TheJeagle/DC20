@@ -3,6 +3,29 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import './MyCreaturesPage.css';
 
+const textSortCollator = typeof Intl !== 'undefined' && typeof Intl.Collator === 'function'
+    ? new Intl.Collator(undefined, { sensitivity: 'base' })
+    : null;
+
+const getSortableValue = (creature, field) => {
+    const value = creature?.[field];
+
+    if (field === 'level') {
+        const numeric = Number(value);
+        return Number.isFinite(numeric) ? numeric : 0;
+    }
+
+    if (value === null || value === undefined) {
+        return '';
+    }
+
+    if (typeof value === 'string') {
+        return value.toLowerCase();
+    }
+
+    return String(value).toLowerCase();
+};
+
 const MyCreaturesPage = ({ currentUser }) => {
     const [allCreatures, setAllCreatures] = useState([]);
     const [filters, setFilters] = useState({ name: '', type: '', role: '', size: '', level: '' });
@@ -40,20 +63,33 @@ const MyCreaturesPage = ({ currentUser }) => {
         setSortDir(direction);
     };
 
-    const filteredCreatures = allCreatures.filter(c => {
-        return (
-            (filters.name ? c.name.toLowerCase().includes(filters.name.toLowerCase()) : true) &&
-            (filters.type ? c.type.toLowerCase().includes(filters.type.toLowerCase()) : true) &&
-            (filters.role ? c.role.toLowerCase().includes(filters.role.toLowerCase()) : true) &&
-            (filters.size ? c.size.toLowerCase().includes(filters.size.toLowerCase()) : true) &&
-            (filters.level ? String(c.level).includes(filters.level) : true)
-        );
-    }).sort((a, b) => {
-        const aVal = a[sortField];
-        const bVal = b[sortField];
-        if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
-        if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
-        return 0;
+    const normalizedFilters = {
+        name: filters.name.trim().toLowerCase(),
+        type: filters.type.trim().toLowerCase(),
+        role: filters.role.trim().toLowerCase(),
+        size: filters.size.trim().toLowerCase(),
+        level: filters.level.trim()
+    };
+
+    const filteredCreatures = allCreatures.filter(creature => (
+        (!normalizedFilters.name || getSortableValue(creature, 'name').includes(normalizedFilters.name)) &&
+        (!normalizedFilters.type || getSortableValue(creature, 'type').includes(normalizedFilters.type)) &&
+        (!normalizedFilters.role || getSortableValue(creature, 'role').includes(normalizedFilters.role)) &&
+        (!normalizedFilters.size || getSortableValue(creature, 'size').includes(normalizedFilters.size)) &&
+        (!normalizedFilters.level || String(getSortableValue(creature, 'level')).includes(normalizedFilters.level))
+    )).sort((a, b) => {
+        const aVal = getSortableValue(a, sortField);
+        const bVal = getSortableValue(b, sortField);
+
+        if (sortField === 'level') {
+            return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+        }
+
+        const compareResult = textSortCollator
+            ? textSortCollator.compare(aVal, bVal)
+            : aVal.localeCompare(bVal);
+
+        return sortDir === 'asc' ? compareResult : -compareResult;
     });
 
     return (
