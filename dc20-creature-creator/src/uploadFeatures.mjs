@@ -1,22 +1,24 @@
-// scripts/uploadFeatures.cjs
-const admin = require('firebase-admin');
-const serviceAccount = require('../dc20-creature-creator-firebase-adminsdk-fbsvc-b569029c31.json');
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, doc, setDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
-try {
-  if (admin.apps.length === 0) {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-    console.log('Firebase Admin initialized successfully.');
-  } else {
-    console.log('Firebase Admin already initialized.');
-  }
-} catch (error) {
-  console.error('Firebase Admin Initialization Error:', error);
-  process.exit(1);
-}
+// Your web app's Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyCgdyE834tp64B2flcR9VUzbIvXwPdwQ-k",
+    authDomain: "dc20-creature-creator.firebaseapp.com",
+    projectId: "dc20-creature-creator",
+    storageBucket: "dc20-creature-creator.firebasestorage.app",
+    messagingSenderId: "638039342508",
+    appId: "1:638039342508:web:a80d7ddaecdab47b1b8e09",
+    measurementId: "G-2BEL1FHFPP"
+};
 
-const db = admin.firestore();
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+// Initialize Cloud Firestore and get a reference to the service
+const db = getFirestore(app);
+const auth = getAuth(app);
 
 const creatureFeatures = [
   // --- PASSIVE FEATURES ---
@@ -432,7 +434,7 @@ const normalizedCreatureFeatures = creatureFeatures.map((feature) => {
 });
 
 async function uploadFeatures() {
-  const featuresCollection = db.collection('features');
+  const featuresCollection = collection(db, 'features');
   let successCount = 0;
   let errorCount = 0;
 
@@ -445,7 +447,7 @@ async function uploadFeatures() {
         errorCount += 1;
         continue;
       }
-      await featuresCollection.doc(feature.id).set(feature, { merge: true });
+      await setDoc(doc(featuresCollection, feature.id), feature, {merge: true});
       console.log(`Successfully uploaded/updated: ${feature.name} (ID: ${feature.id})`);
       successCount += 1;
     } catch (error) {
