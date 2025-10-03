@@ -187,6 +187,9 @@ const mapActionFeature = (feature) => {
 
 const mapEnhancementFeature = (feature) => {
   const cost = normalizeCost(feature);
+  const range = normalizeRange(feature);
+  const target = normalizeTarget(feature);
+  const damage = normalizeDamage(feature);
   const save = normalizeSave(feature);
 
   return {
@@ -196,6 +199,15 @@ const mapEnhancementFeature = (feature) => {
     costAP: cost.ap,
     costMP: cost.mp,
     costSP: cost.sp,
+    damage,
+    damageMod: damage?.modifier ?? 0,
+    damageType: damage?.type || feature.damageType,
+    range,
+    rangeValue: range?.value || 0,
+    rangeUnit: range?.unit,
+    targetDescription: feature.targetDescription,
+    target,
+    defense: feature.defense || feature.targetsDefense,
     description: feature.descriptionCore || feature.description,
     saveAttribute: save?.attribute,
     saveDCMod: save?.dcMod || 0,

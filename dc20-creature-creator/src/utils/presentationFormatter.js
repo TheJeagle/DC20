@@ -228,7 +228,7 @@ export const formatForPresentation = (raw, derived) => {
 
   display.Reactions = (derived.reactions || []).map((reaction) => ({
     name: `${reaction.name} (${reaction.displayCost || 'Reaction'})`,
-    details: reaction.description,
+    details: createAttackDescription(reaction, reaction),
     originalFeatureId: reaction.originalFeatureId,
   }));
 

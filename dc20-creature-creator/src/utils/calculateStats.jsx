@@ -55,6 +55,7 @@ const extractSaveText = (action = {}) => {
 
 const enhanceActionData = (rawStats, actions = []) =>
   actions.map((action) => {
+    const category = action.category || 'action';
     const damageModifier = toNumberOr(action.damage?.modifier, toNumberOr(action.damageMod, 0));
     const damageBaseOverride =
       typeof action.damage?.base === 'number'
@@ -74,14 +75,15 @@ const enhanceActionData = (rawStats, actions = []) =>
     })();
 
     const calculatedSaveDC = rawStats.SaveDC + extractSaveDcMod(action);
-    const displayCost = buildCostDisplay(action.cost, action, action.category);
+    const displayCost = buildCostDisplay(action.cost, action, category);
     const saveText = extractSaveText(action);
     const totalDamage = Math.ceil(calculatedDamage);
 
     return {
       ...action,
+      category,
       damage: {
-        ...action.damage,
+        ...(action.damage && typeof action.damage === 'object' ? action.damage : {}),
         modifier: damageModifier,
         base:
           typeof damageBaseOverride === 'number'
@@ -101,22 +103,63 @@ const enhanceActionData = (rawStats, actions = []) =>
   });
 
 const enhanceEnhancements = (rawStats, enhancements = []) =>
-  enhancements.map((enh) => ({
-    ...enh,
-    calculatedSaveDC: rawStats.SaveDC + extractSaveDcMod(enh),
-    displayCost: buildCostDisplay(enh.cost, enh, enh.category),
-    saveText: extractSaveText(enh),
-  }));
+  enhancements.map((enh) => {
+    const category = enh.category || 'attack_enhancement';
+    const damageModifier = toNumberOr(enh.damage?.modifier, toNumberOr(enh.damageMod, 0));
+    const damageBaseOverride =
+      typeof enh.damage?.base === 'number'
+        ? enh.damage.base
+        : typeof enh.baseDamageOverride === 'number'
+        ? enh.baseDamageOverride
+        : null;
 
-const enhanceReactions = (reactions = []) =>
-  reactions.map((reaction) => ({
-    ...reaction,
-    displayCost: buildCostDisplay(reaction.cost, reaction, 'reaction'),
-    saveText: extractSaveText(reaction),
-  }));
+    const totalDamage =
+      typeof damageBaseOverride === 'number'
+        ? Math.ceil(damageBaseOverride + damageModifier)
+        : typeof enh.damage?.total === 'number'
+        ? Math.ceil(enh.damage.total)
+        : undefined;
+
+    const existingDamage =
+      enh.damage && typeof enh.damage === 'object' ? { ...enh.damage } : null;
+    const shouldBuildDamage = existingDamage || typeof damageBaseOverride === 'number';
+    const normalizedDamage = shouldBuildDamage
+      ? {
+          ...(existingDamage || {}),
+          modifier: damageModifier,
+          base:
+            typeof damageBaseOverride === 'number'
+              ? damageBaseOverride
+              : existingDamage?.base,
+          total: totalDamage,
+          type: existingDamage?.type || enh.damageType,
+        }
+      : enh.damage;
+
+    return {
+      ...enh,
+      category,
+      damage: normalizedDamage,
+      damageType: normalizedDamage?.type || enh.damageType,
+      calculatedDamage: typeof totalDamage === 'number' ? totalDamage : enh.calculatedDamage,
+      calculatedSaveDC: rawStats.SaveDC + extractSaveDcMod(enh),
+      displayCost: buildCostDisplay(enh.cost, enh, category),
+      saveText: extractSaveText(enh),
+    };
+  });
+
+const enhanceReactions = (rawStats, reactions = []) =>
+  enhanceActionData(
+    rawStats,
+    reactions.map((reaction) => ({
+      category: 'reaction',
+      ...reaction,
+    })),
+  );
 
 const enhanceApexActions = (rawStats, actions = []) =>
   actions.map((action) => {
+    const category = action.category || 'apex_action';
     const damageModifier = toNumberOr(action.damage?.modifier, toNumberOr(action.damageMod, 0));
     const damageBaseOverride =
       typeof action.damage?.base === 'number'
@@ -135,11 +178,12 @@ const enhanceApexActions = (rawStats, actions = []) =>
       return rawStats.Damage + damageModifier;
     })();
 
-    const displayCost = buildCostDisplay(action.cost, action, action.category);
+    const displayCost = buildCostDisplay(action.cost, action, category);
     const totalDamage = Math.ceil(calculatedDamage);
 
     return {
       ...action,
+      category,
       damage: {
         ...action.damage,
         modifier: damageModifier,
@@ -154,6 +198,7 @@ const enhanceApexActions = (rawStats, actions = []) =>
       calculatedSaveDC: rawStats.SaveDC + extractSaveDcMod(action),
       displayCost,
       description: action.description,
+      saveText: extractSaveText(action),
     };
   });
 
@@ -194,7 +239,7 @@ export const calculateCreatureStats = (
     defaultAttacks: overriddenDefaultAttacks,
     combatActions: enhanceActionData(raw, raw.CombatActions),
     apexActions: enhanceApexActions(raw, raw.ApexActions),
-    reactions: enhanceReactions(raw.Reactions),
+    reactions: enhanceReactions(raw, raw.Reactions),
     attackEnhancements: enhanceEnhancements(raw, raw.AttackEnhancements),
   };
 
