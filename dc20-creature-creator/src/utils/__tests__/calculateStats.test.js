@@ -46,23 +46,22 @@ describe('calculateCreatureStats', () => {
     const action = {
       name: 'Fiery Strike',
       category: 'action',
-      actionType: 'Melee Spell Attack',
-      costAP: 1,
-      damageMod: 2,
-      saveAttribute: 'Mig',
+      method: 'Melee Spell Attack',
+      cost: { ap: 1 },
+      damage: { modifier: 2, type: 'fire' },
+      save: 'Might',
       saveDCMod: 2,
-      damageType: 'fire',
-      targetsDefense: 'PD',
-      rangeValue: 1,
-      rangeUnit: 'space',
-      targetDescription: '1 creature',
-      descriptionCore: 'Strike with fire.'
+      defense: 'PD',
+      range: 1,
+      target: '1 creature',
+      summary: 'Strike with fire.'
     };
 
     const result = calculateCreatureStats(inputs, [action], {});
     const displayAttack = result.display.Combat.Attacks.find(a => a.name.startsWith('Fiery Strike'));
     expect(displayAttack).toBeDefined();
-    expect(displayAttack.details).toContain('4 fire damage vs PD.');
+    expect(displayAttack.details).toContain('base damage +2 fire vs PD.');
+    expect(displayAttack.details).toContain('Target 1 creature within 1 spaces.');
     expect(displayAttack.details).toContain('DC 16');
 
   });
@@ -81,7 +80,7 @@ describe('calculateCreatureStats', () => {
       0: {
         damage: 8,
         name: 'Custom Attack',
-        details: '8 physical damage vs PD. Target 1 creature within 1 space.'
+        summary: '8 physical damage vs PD. Target 1 creature within 1 space.'
       }
     };
 
@@ -107,12 +106,11 @@ describe('calculateCreatureStats', () => {
       id: 'apex_test_action',
       name: 'Tail Sweep',
       category: 'apex_action',
-      costAP: 1,
-      descriptionCore: 'Swipe your tail at a foe.',
-      actionType: 'Melee Attack',
-      rangeValue: 1,
-      rangeUnit: 'space',
-      targetDescription: '1 creature'
+      cost: { ap: 1 },
+      summary: 'Swipe your tail at a foe.',
+      method: 'Melee Attack',
+      range: 1,
+      target: '1 creature'
     };
 
     const result = calculateCreatureStats(inputs, [apexAction], {});

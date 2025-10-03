@@ -8,59 +8,103 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
 
     const {
         name = '',
+        cost,
         costAP = 0,
         costMP = 0,
+        costSP = 0,
         damage,
-        calculatedDamage,
-        damageType = 'damage',
-        targetsDefense = 'PD',
-        targetDescription = 'target',
+        damageMod,
+        damageType: legacyDamageType,
+        defense: providedDefense,
+        targetsDefense,
+        target,
+        targetDescription,
         range,
         rangeValue,
         rangeUnit,
+        summary,
         details = '',
+        category,
+        kind,
     } = action;
 
-    const finalDamage = Math.ceil(typeof damage === 'number' ? damage : (typeof calculatedDamage === 'number' ? calculatedDamage : ''));
+    const effectiveCost = (() => {
+        if (cost && typeof cost === 'object') return cost;
+        const legacy = {};
+        if (costAP > 0) legacy.ap = costAP;
+        if (costMP > 0) legacy.mp = costMP;
+        if (costSP > 0) legacy.sp = costSP;
+        return legacy;
+    })();
 
+    const damageModifier = typeof damage?.modifier === 'number'
+        ? damage.modifier
+        : (typeof damageMod === 'number' ? damageMod : 0);
+    const damageType = damage?.type || legacyDamageType || 'damage';
+    const defense = providedDefense || targetsDefense || 'PD';
+    const targetText = target || targetDescription || 'target';
+    const summaryText = summary || details || '';
 
-    let rangeDisplay = range;
-    if (!rangeDisplay && rangeValue) {
-        rangeDisplay = `${rangeValue} ${rangeUnit || ''}`.trim();
-    }
+    const parseRangeValue = () => {
+        if (typeof range === 'number') return range;
+        if (typeof range === 'string') {
+            const match = range.match(/(\d+)/);
+            if (match) return parseInt(match[1], 10);
+        }
+        if (typeof rangeValue === 'number') return rangeValue;
+        if (typeof rangeValue === 'string') {
+            const match = rangeValue.match(/(\d+)/);
+            if (match) return parseInt(match[1], 10);
+        }
+        return null;
+    };
+
+    const normalizedRange = parseRangeValue();
+    const rangeDisplayValue = typeof normalizedRange === 'number' ? normalizedRange : '';
+    const showWithinRange = typeof normalizedRange === 'number' && normalizedRange > 0;
+    const defaultRangeText = (!showWithinRange && defense === 'AD') ? 'around yourself' : '';
 
     const handleSave = (field, value) => {
         if (onSaveField) onSaveField(field, value);
     };
 
     const renderCost = () => {
-        if (costAP === 0 && costMP === 0) return <span>Free</span>;
+        const entries = Object.entries(effectiveCost || {}).filter(([, amount]) => amount > 0);
+        let costString = entries
+            .map(([resource, amount]) => `${amount} ${resource.toUpperCase()}`)
+            .join(', ');
 
-        const parts = [];
-        if (costAP > 0) parts.push(`${costAP} AP`);
-        if (costMP > 0) parts.push(`${costMP} MP`);
-        const costString = parts.join(' + ');
+        if (!costString) {
+            const isReaction = (category && category === 'reaction') || (kind && kind === 'reaction');
+            costString = isReaction ? 'Reaction' : 'Free';
+        }
+
+        const parseCostString = (input) => {
+            const result = {};
+            const regex = /(\d+)\s*(AP|MP|SP)/gi;
+            let match;
+            while ((match = regex.exec(input)) !== null) {
+                const amount = parseInt(match[1], 10);
+                if (!Number.isNaN(amount) && amount > 0) {
+                    result[match[2].toLowerCase()] = amount;
+                }
+            }
+            return result;
+        };
 
         const onCostSave = (field, val) => {
-            const apMatch = val.match(/(\d+)\s*AP/i);
-            const mpMatch = val.match(/(\d+)\s*MP/i);
-            const parsedAP = apMatch ? parseInt(apMatch[1], 10) : 0;
-            const parsedMP = mpMatch ? parseInt(mpMatch[1], 10) : 0;
-            if (onSaveField) {
-                onSaveField('costAP', parsedAP);
-                onSaveField('costMP', parsedMP);
-            }
+            if (!onSaveField) return;
+            const parsed = parseCostString(val || '');
+            onSaveField('cost', Object.keys(parsed).length > 0 ? parsed : null);
         };
 
         return (
-            <strong>
-                <EditableField
-                    value={costString}
-                    onSave={onCostSave}
-                    fieldType="text"
-                    className="editable-number-field"
-                />
-            </strong>
+            <EditableField
+                value={costString}
+                onSave={onCostSave}
+                fieldType="text"
+                className="editable-number-field"
+            />
         );
     };
 
@@ -76,24 +120,25 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
             <strong>{renderCost()}</strong>
             ):
             {' '}
+            base damage {damageModifier >= 0 ? '+' : ''}
             <EditableField
-                value={finalDamage}
-                onSave={(f, val) => handleSave('damage', val)}
+                value={damageModifier}
+                onSave={(f, val) => handleSave('damage.modifier', val)}
                 fieldType="number"
                 className="editable-description-field"
             />{' '}
             <EditableField
                 value={damageType}
-                onSave={(f, val) => handleSave('damageType', val)}
+                onSave={(f, val) => handleSave('damage.type', val)}
                 fieldType="text"
                 className="editable-description-field"
             />{' '}
             damage vs{' '}
             {isEditingDefense ? (
                 <select
-                    value={targetsDefense}
+                    value={defense}
                     onChange={(e) => {
-                        handleSave('targetsDefense', e.target.value);
+                        handleSave('defense', e.target.value);
                         setIsEditingDefense(false);
                     }}
                     onBlur={() => setIsEditingDefense(false)}
@@ -107,29 +152,37 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
                     onDoubleClick={() => setIsEditingDefense(true)}
                     className="editable-select-span"
                 >
-                    {targetsDefense}
+                    {defense}
                 </span>
             )}
             . Target{' '}
             <EditableField
-                value={targetDescription}
-                onSave={(f, val) => handleSave('targetDescription', val)}
+                value={targetText}
+                onSave={(f, val) => handleSave('target', val)}
                 fieldType="text"
                 className="editable-description-field"
             />{' '}
-            within{' '}
-            <EditableField
-                value={rangeDisplay}
-                onSave={(f, val) => handleSave('range', val)}
-                fieldType="text"
-                className="editable-description-field"
-            />.
-            {details && (
+            {showWithinRange ? (
+                <>
+                    within{' '}
+                    <EditableField
+                        value={rangeDisplayValue}
+                        onSave={(f, val) => handleSave('range', val)}
+                        fieldType="text"
+                        className="editable-description-field"
+                    />{' '}
+                    spaces
+                </>
+            ) : (
+                defaultRangeText ? ` ${defaultRangeText}` : ''
+            )}
+            .
+            {summaryText && (
                 <>
                     <br />
                     <EditableField
-                        value={details}
-                        onSave={(f, val) => handleSave('details', val)}
+                        value={summaryText}
+                        onSave={(f, val) => handleSave('summary', val)}
                         fieldType="text"
                         className="editable-description-field"
                     />

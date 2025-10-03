@@ -85,33 +85,74 @@ export const applyOverrides = (creatureState, overrides = {}, actionOverrides = 
 });
 
 const createDisplayActions = (statBlock, selectedFeatures = []) => {
+  const normalizeCost = (source = {}) => {
+    if (source.cost && typeof source.cost === 'object') {
+      return source.cost;
+    }
+    const legacy = {};
+    if (source.costAP > 0) legacy.ap = source.costAP;
+    if (source.costMP > 0) legacy.mp = source.costMP;
+    if (source.costSP > 0) legacy.sp = source.costSP;
+    return Object.keys(legacy).length > 0 ? legacy : null;
+  };
+
+  const normalizeRange = (source = {}) => {
+    if (typeof source.range === 'number') return source.range;
+    if (typeof source.rangeValue === 'number') return source.rangeValue;
+    return undefined;
+  };
+
+  const normalizeTarget = (source = {}) => source.target || source.targetDescription || source.targets || '';
+
+  const normalizeSummary = (source = {}) => source.summary || source.descriptionCore || source.description || '';
+
+  const normalizeDamage = (source = {}) => {
+    if (source.damage && typeof source.damage === 'object') {
+      return source.damage;
+    }
+    const modifier = typeof source.damageMod === 'number' ? source.damageMod : 0;
+    const type = source.damageType || null;
+    if (modifier !== 0 || type) {
+      return {
+        modifier,
+        type,
+      };
+    }
+    return undefined;
+  };
+
+  const normalizeDefense = (source = {}) => source.defense || source.targetsDefense || null;
+
   const defaultActions = (statBlock?.raw?.DefaultAttacks || []).map((attack) => ({
     name: attack.name,
-    costAP: attack.costAP || 0,
-    costMP: attack.costMP || 0,
-    damageMod: 0,
-    saveDCMod: 0,
-    range: attack.range || '',
-    targets: attack.targetDescription || '',
-    actionType: attack.type || '',
-    description: '',
+    cost: normalizeCost(attack),
+    damage: normalizeDamage(attack),
+    defense: normalizeDefense(attack),
+    range: normalizeRange(attack),
+    target: normalizeTarget(attack),
+    summary: normalizeSummary(attack),
+    method: attack.type || '',
     source: 'default',
+    category: attack.category || 'action',
+    kind: attack.kind || 'action',
   }));
 
   const featureActions = (selectedFeatures || [])
     .filter((feature) => feature && feature.category === 'action')
     .map((feature) => ({
       name: feature.name,
-      costAP: feature.costAP || 0,
-      costMP: feature.costMP || 0,
-      damageMod: feature.damageMod || 0,
-      saveDCMod: feature.saveDCMod || 0,
-      range: feature.range || '',
-      targets: feature.targets || '',
-      actionType: feature.actionType || '',
-      description: feature.descriptionCore || feature.description || '',
+      cost: normalizeCost(feature),
+      damage: normalizeDamage(feature),
+      defense: normalizeDefense(feature),
+      range: normalizeRange(feature),
+      target: normalizeTarget(feature),
+      summary: normalizeSummary(feature),
+      method: feature.method || feature.actionType || '',
       source: 'feature',
       id: feature.id,
+      category: feature.category,
+      kind: feature.kind || feature.category,
+      trigger: feature.trigger || null,
     }));
 
   return {

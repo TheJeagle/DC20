@@ -39,35 +39,74 @@ const StatBlockPanel = forwardRef(
             ? display.Combat.Attacks.filter((a) => !a.originalFeatureId)
             : [];
 
+        const normalizeCost = (source = {}) => {
+            if (source.cost && typeof source.cost === 'object') {
+                return source.cost;
+            }
+            const legacy = {};
+            if (source.costAP > 0) legacy.ap = source.costAP;
+            if (source.costMP > 0) legacy.mp = source.costMP;
+            if (source.costSP > 0) legacy.sp = source.costSP;
+            return Object.keys(legacy).length > 0 ? legacy : null;
+        };
+
+        const normalizeRange = (source = {}) => {
+            if (typeof source.range === 'number') return source.range;
+            if (typeof source.rangeValue === 'number') return source.rangeValue;
+            if (typeof source.range === 'string') {
+                const match = source.range.match(/(\d+)/);
+                if (match) return parseInt(match[1], 10);
+            }
+            return undefined;
+        };
+
+        const normalizeTarget = (source = {}) => source.target || source.targetDescription || source.targets || '';
+
+        const normalizeSummary = (source = {}) => source.summary || source.details || source.descriptionCore || source.description || '';
+
+        const normalizeDamage = (source = {}) => {
+            if (source.damage && typeof source.damage === 'object') {
+                return source.damage;
+            }
+            const modifier = typeof source.damageMod === 'number' ? source.damageMod : 0;
+            const type = source.damageType || null;
+            if (modifier !== 0 || type) {
+                return {
+                    modifier,
+                    type,
+                };
+            }
+            return undefined;
+        };
+
+        const normalizeDefense = (source = {}) => source.defense || source.targetsDefense || null;
+
+        const assembleAction = (base = {}) => ({
+            name: base.name,
+            cost: normalizeCost(base),
+            damage: normalizeDamage(base),
+            defense: normalizeDefense(base),
+            range: normalizeRange(base),
+            target: normalizeTarget(base),
+            summary: normalizeSummary(base),
+            method: base.method || base.actionType || base.type || '',
+            trigger: base.trigger || null,
+            category: base.category || base.kind || 'action',
+            kind: base.kind || base.category || 'action',
+        });
+
         const resolvedDefaultAttacks = defaultDisplayAttacks.length > 0
             ? defaultDisplayAttacks.map((attack, index) => ({
                 key: `default-attack-${index}`,
-                action: {
+                action: assembleAction({
                     ...(defaultAttacksRaw[index] || {}),
                     ...attack,
-                },
+                }),
             }))
-            : generatedDefaultActions.map((action, index) => {
-                const range = action.rangeValue
-                    ? `${action.rangeValue} ${action.rangeUnit || ''}`.trim()
-                    : action.range || '';
-
-                return {
-                    key: `generated-default-attack-${index}`,
-                    action: {
-                        name: action.name,
-                        costAP: action.costAP ?? 0,
-                        costMP: action.costMP ?? 0,
-                        damage: action.baseDamageOverride ?? 0,
-                        calculatedDamage: action.baseDamageOverride ?? 0,
-                        damageType: action.damageType ?? 'damage',
-                        targetsDefense: action.targetsDefense ?? 'PD',
-                        targetDescription: action.targetDescription ?? '',
-                        range,
-                        details: action.descriptionCore || action.description || '',
-                    },
-                };
-            });
+            : generatedDefaultActions.map((action, index) => ({
+                key: `generated-default-attack-${index}`,
+                action: assembleAction(action),
+            }));
 
     const getEditableNumericValue = (statString) => {
         if (typeof statString === 'string') {

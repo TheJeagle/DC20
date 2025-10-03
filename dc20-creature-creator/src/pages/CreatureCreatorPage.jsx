@@ -260,30 +260,153 @@ const CreatureCreatorPage = ({ currentUser }) => {
     const target = actionFeatures[actionIndex];
     if (!target) return;
     const targetId = target.id;
+    const parseRangeInput = (input) => {
+      if (input === '' || input === null || typeof input === 'undefined') return null;
+      if (typeof input === 'number') return input;
+      const match = `${input}`.match(/-?\d+/);
+      return match ? parseInt(match[0], 10) : null;
+    };
+
     const updatedFeatures = selectedFeatures.map((feature) => {
       if (feature.id !== targetId) return feature;
-      let newVal = value;
-      if (['costAP', 'costMP', 'costSP', 'damageMod', 'saveDCMod', 'rangeValue', 'areaSize'].includes(field)) {
-        const num = parseInt(value, 10);
-        newVal = Number.isNaN(num) ? 0 : num;
+
+      if (field === 'cost') {
+        const normalizedCost = value && typeof value === 'object' && Object.keys(value).length > 0 ? value : null;
+        return { ...feature, cost: normalizedCost };
       }
-      return { ...feature, [field]: newVal };
+
+      if (field.startsWith('damage.')) {
+        const [, prop] = field.split('.');
+        const currentDamage = feature.damage && typeof feature.damage === 'object' ? { ...feature.damage } : {};
+        if (prop === 'modifier') {
+          const num = parseInt(value, 10);
+          if (Number.isNaN(num)) {
+            delete currentDamage.modifier;
+          } else {
+            currentDamage.modifier = num;
+          }
+        } else if (prop === 'type') {
+          const trimmed = typeof value === 'string' ? value.trim() : '';
+          if (trimmed) {
+            currentDamage.type = trimmed;
+          } else {
+            delete currentDamage.type;
+          }
+        }
+        const cleanedDamage = Object.keys(currentDamage).length > 0 ? currentDamage : undefined;
+        return { ...feature, damage: cleanedDamage };
+      }
+
+      if (field === 'defense') {
+        const normalizedDefense = value ? value.toUpperCase() : null;
+        return { ...feature, defense: normalizedDefense };
+      }
+
+      if (field === 'range') {
+        const num = parseRangeInput(value);
+        const normalizedRange = Number.isNaN(num) ? null : Math.max(0, num);
+        const updated = { ...feature };
+        if (normalizedRange === null) {
+          delete updated.range;
+        } else {
+          updated.range = normalizedRange;
+        }
+        return updated;
+      }
+
+      if (field === 'target') {
+        return { ...feature, target: value };
+      }
+
+      if (field === 'summary') {
+        return { ...feature, summary: value, description: value };
+      }
+
+      return { ...feature, [field]: value };
     });
     dispatch({ type: 'SET_SELECTED_FEATURES', payload: updatedFeatures });
   };
 
   const handleDefaultActionUpdate = (actionIndex, field, value) => {
     const current = actionOverrides[actionIndex] || {};
-    let newVal = value;
-    if (['costAP', 'costMP', 'damage'].includes(field)) {
-      const num = parseInt(value, 10);
-      newVal = Number.isNaN(num) ? 0 : num;
+    const updatedOverride = { ...current };
+    const parseRangeInput = (input) => {
+      if (input === '' || input === null || typeof input === 'undefined') return null;
+      if (typeof input === 'number') return input;
+      const match = `${input}`.match(/-?\d+/);
+      return match ? parseInt(match[0], 10) : null;
+    };
+
+    if (field === 'cost') {
+      const normalizedCost = value && typeof value === 'object' && Object.keys(value).length > 0 ? value : null;
+      if (normalizedCost) {
+        updatedOverride.cost = normalizedCost;
+      } else {
+        delete updatedOverride.cost;
+      }
+    } else if (field.startsWith('damage.')) {
+      const [, prop] = field.split('.');
+      const currentDamage = updatedOverride.damage && typeof updatedOverride.damage === 'object'
+        ? { ...updatedOverride.damage }
+        : {};
+      if (prop === 'modifier') {
+        const num = parseInt(value, 10);
+        if (Number.isNaN(num)) {
+          delete currentDamage.modifier;
+        } else {
+          currentDamage.modifier = num;
+        }
+      } else if (prop === 'type') {
+        const trimmed = typeof value === 'string' ? value.trim() : '';
+        if (trimmed) {
+          currentDamage.type = trimmed;
+        } else {
+          delete currentDamage.type;
+        }
+      }
+      if (Object.keys(currentDamage).length > 0) {
+        updatedOverride.damage = currentDamage;
+      } else {
+        delete updatedOverride.damage;
+      }
+    } else if (field === 'defense') {
+      if (value) {
+        updatedOverride.defense = value.toUpperCase();
+      } else {
+        delete updatedOverride.defense;
+      }
+    } else if (field === 'range') {
+      const num = parseRangeInput(value);
+      if (Number.isNaN(num) || num === null) {
+        delete updatedOverride.range;
+      } else {
+        updatedOverride.range = Math.max(0, num);
+      }
+    } else if (field === 'target') {
+      if (value) {
+        updatedOverride.target = value;
+      } else {
+        delete updatedOverride.target;
+      }
+    } else if (field === 'summary') {
+      if (value) {
+        updatedOverride.summary = value;
+      } else {
+        delete updatedOverride.summary;
+      }
+    } else {
+      if (value !== undefined && value !== null) {
+        updatedOverride[field] = value;
+      } else {
+        delete updatedOverride[field];
+      }
     }
+
     dispatch({
       type: 'SET_ACTION_OVERRIDES',
       payload: {
         ...actionOverrides,
-        [actionIndex]: { ...current, [field]: newVal },
+        [actionIndex]: updatedOverride,
       },
     });
   };
