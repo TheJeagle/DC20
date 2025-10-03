@@ -24,12 +24,42 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
     } = action;
 
     const resolvedDamageType = damage?.type || damageType || 'damage';
-    const damageModifier = (() => {
+    const damageModifierRaw = (() => {
         if (typeof damage?.modifier === 'number') return damage.modifier;
         if (typeof damage?.modifier === 'string') return damage.modifier;
         if (typeof action.damageMod === 'number') return action.damageMod;
         if (typeof action.damageMod === 'string') return action.damageMod;
         return 0;
+    })();
+    const numericDamageModifier = Number(damageModifierRaw);
+    const modifierIsNumeric = !Number.isNaN(numericDamageModifier);
+    const baseDamageAmount = (() => {
+        if (typeof calculatedDamage === 'number' && Number.isFinite(calculatedDamage)) {
+            return calculatedDamage;
+        }
+        if (typeof damage?.base === 'number' && Number.isFinite(damage.base)) {
+            return damage.base;
+        }
+        if (
+            typeof damage?.total === 'number'
+            && Number.isFinite(damage.total)
+            && modifierIsNumeric
+        ) {
+            return damage.total - numericDamageModifier;
+        }
+        return null;
+    })();
+    const resolvedDamageAmount = (() => {
+        if (typeof baseDamageAmount === 'number' && modifierIsNumeric) {
+            return Math.ceil(baseDamageAmount + numericDamageModifier);
+        }
+        if (typeof baseDamageAmount === 'number') {
+            return Math.ceil(baseDamageAmount);
+        }
+        if (typeof damage?.total === 'number' && Number.isFinite(damage.total)) {
+            return Math.ceil(damage.total);
+        }
+        return null;
     })();
     const resolvedDefense = defense || targetsDefense || 'PD';
     const rangeDisplay = (() => {
@@ -48,6 +78,21 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
 
     const handleSave = (field, value) => {
         if (onSaveField) onSaveField(field, value);
+    };
+
+    const handleDamageTotalSave = (value) => {
+        if (!onSaveField) return;
+
+        const parsed = Number(value);
+        if (Number.isNaN(parsed)) return;
+
+        if (typeof baseDamageAmount === 'number' && Number.isFinite(baseDamageAmount)) {
+            const difference = parsed - baseDamageAmount;
+            onSaveField('damage.modifier', Number.isFinite(difference) ? difference : 0);
+            return;
+        }
+
+        onSaveField('damage.total', parsed);
     };
 
     const parseCostString = (value) => {
@@ -126,13 +171,16 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
             <strong>{renderCost()}</strong>
             ):
             {' '}
-            base damage {Number(damageModifier) >= 0 ? '+' : ''}
-            <EditableField
-                value={damageModifier}
-                onSave={(f, val) => handleSave('damage.modifier', val)}
-                fieldType="number"
-                className="editable-description-field"
-            />{' '}
+            {typeof resolvedDamageAmount === 'number' ? (
+                <EditableField
+                    value={resolvedDamageAmount}
+                    onSave={(f, val) => handleDamageTotalSave(val)}
+                    fieldType="number"
+                    className="editable-number-field"
+                />
+            ) : (
+                'damage '
+            )}
             <EditableField
                 value={resolvedDamageType}
                 onSave={(f, val) => handleSave('damageType', val)}
