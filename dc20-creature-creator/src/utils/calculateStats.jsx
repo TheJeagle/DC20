@@ -56,23 +56,40 @@ const extractSaveText = (action = {}) => {
 const enhanceActionData = (rawStats, actions = []) =>
   actions.map((action) => {
     const category = action.category || 'action';
+    const originalDamage = action.damage;
     const damageModifier = toNumberOr(
-      action.damage?.modifier,
-      toNumberOr(action.damage?.bonus, toNumberOr(action.damageMod, 0)),
+      originalDamage?.modifier,
+      toNumberOr(originalDamage?.bonus, toNumberOr(action.damageMod, 0)),
     );
     const damageBaseOverride =
-      typeof action.damage?.base === 'number'
-        ? action.damage.base
+      typeof originalDamage?.base === 'number'
+        ? originalDamage.base
         : typeof action.baseDamageOverride === 'number'
         ? action.baseDamageOverride
         : null;
 
+    const hasExplicitDamage =
+      typeof originalDamage === 'number' ||
+      (originalDamage && typeof originalDamage === 'object');
+    const hasMeaningfulDamageMod =
+      typeof action.damageMod === 'number' &&
+      (hasExplicitDamage || typeof damageBaseOverride === 'number');
+    const shouldCalculateDamage =
+      isAttackAction(action) ||
+      hasExplicitDamage ||
+      typeof damageBaseOverride === 'number' ||
+      hasMeaningfulDamageMod ||
+      typeof action.damageBonus === 'number';
+
     const calculatedDamage = (() => {
+      if (!shouldCalculateDamage) {
+        return undefined;
+      }
       if (typeof damageBaseOverride === 'number') {
         return damageBaseOverride + damageModifier;
       }
       if (!isAttackAction(action)) {
-        return 0;
+        return undefined;
       }
       return rawStats.Damage + damageModifier;
     })();
@@ -80,22 +97,36 @@ const enhanceActionData = (rawStats, actions = []) =>
     const calculatedSaveDC = rawStats.SaveDC + extractSaveDcMod(action);
     const displayCost = buildCostDisplay(action.cost, action, category);
     const saveText = extractSaveText(action);
-    const totalDamage = Math.ceil(calculatedDamage);
+    const totalDamage =
+      typeof calculatedDamage === 'number' && Number.isFinite(calculatedDamage)
+        ? Math.ceil(calculatedDamage)
+        : undefined;
 
-    return {
-      ...action,
-      category,
-      damage: {
-        ...(action.damage && typeof action.damage === 'object' ? action.damage : {}),
+    const normalizedDamage = (() => {
+      if (!shouldCalculateDamage) {
+        if (hasExplicitDamage && typeof originalDamage === 'object') {
+          return { ...originalDamage };
+        }
+        return hasExplicitDamage ? originalDamage : undefined;
+      }
+
+      return {
+        ...(typeof originalDamage === 'object' ? originalDamage : {}),
         modifier: damageModifier,
         base:
           typeof damageBaseOverride === 'number'
             ? damageBaseOverride
-            : action.damage?.base,
+            : originalDamage?.base,
         total: totalDamage,
-        type: action.damage?.type || action.damageType,
-      },
-      damageType: action.damage?.type || action.damageType,
+        type: originalDamage?.type || action.damageType,
+      };
+    })();
+
+    return {
+      ...action,
+      category,
+      ...(normalizedDamage != null && { damage: normalizedDamage }),
+      damageType: normalizedDamage?.type || action.damageType,
       calculatedDamage: totalDamage,
       calculatedSaveDC,
       displayCost,
