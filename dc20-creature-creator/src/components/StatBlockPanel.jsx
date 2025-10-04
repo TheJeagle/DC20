@@ -136,34 +136,85 @@ const StatBlockPanel = forwardRef(
         const normalizeSummary = (source = {}) => source.summary || source.details || source.descriptionCore || source.description || '';
 
         const normalizeDamage = (source = {}) => {
-            if (source.damage && typeof source.damage === 'object') {
-                return source.damage;
+            const rawDamage = source.damage;
+            const rawDamageObject = rawDamage && typeof rawDamage === 'object' ? rawDamage : null;
+
+            const resolvedBase = (() => {
+                if (
+                    typeof source.baseDamageOverride === 'number'
+                    && Number.isFinite(source.baseDamageOverride)
+                ) {
+                    return source.baseDamageOverride;
+                }
+                if (typeof rawDamage === 'number' && Number.isFinite(rawDamage)) {
+                    return rawDamage;
+                }
+                if (
+                    rawDamageObject
+                    && typeof rawDamageObject.base === 'number'
+                    && Number.isFinite(rawDamageObject.base)
+                ) {
+                    return rawDamageObject.base;
+                }
+                return undefined;
+            })();
+
+            const resolvedModifier = (() => {
+                const candidate =
+                    typeof source.damageMod !== 'undefined'
+                        ? source.damageMod
+                        : rawDamageObject && typeof rawDamageObject.modifier !== 'undefined'
+                        ? rawDamageObject.modifier
+                        : rawDamageObject && typeof rawDamageObject.bonus !== 'undefined'
+                        ? rawDamageObject.bonus
+                        : undefined;
+
+                if (typeof candidate === 'number' || typeof candidate === 'string') {
+                    return candidate;
+                }
+
+                return 0;
+            })();
+
+            const resolvedType =
+                source.damageType
+                || (rawDamageObject && rawDamageObject.type)
+                || null;
+
+            const result = {};
+
+            if (typeof resolvedBase === 'number') {
+                result.base = resolvedBase;
             }
 
-            if (typeof source.damage === 'number' && Number.isFinite(source.damage)) {
-                return {
-                    base: source.damage,
-                    modifier: 0,
-                    type: source.damageType || null,
-                };
+            if (
+                typeof resolvedModifier === 'number'
+                || resolvedModifier === 0
+                || (typeof resolvedModifier === 'string' && resolvedModifier.trim().length > 0)
+            ) {
+                result.modifier = resolvedModifier;
             }
 
-            const modifier = typeof source.damageMod === 'number' ? source.damageMod : 0;
-            const type = source.damageType || null;
-            const base =
-                typeof source.baseDamageOverride === 'number' && Number.isFinite(source.baseDamageOverride)
-                    ? source.baseDamageOverride
-                    : undefined;
-
-            if (typeof base === 'number' || modifier !== 0 || type) {
-                return {
-                    ...(typeof base === 'number' ? { base } : {}),
-                    modifier,
-                    type,
-                };
+            if (resolvedType) {
+                result.type = resolvedType;
             }
 
-            return undefined;
+            if (rawDamageObject) {
+                if (
+                    typeof rawDamageObject.total === 'number'
+                    && Number.isFinite(rawDamageObject.total)
+                ) {
+                    result.total = rawDamageObject.total;
+                }
+                if (rawDamageObject.special) {
+                    result.special = rawDamageObject.special;
+                }
+                if (typeof rawDamageObject.multiplier !== 'undefined') {
+                    result.multiplier = rawDamageObject.multiplier;
+                }
+            }
+
+            return Object.keys(result).length > 0 ? result : undefined;
         };
 
         const normalizeDefense = (source = {}) => source.defense || source.targetsDefense || null;
