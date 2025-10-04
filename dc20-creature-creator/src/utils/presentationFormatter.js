@@ -194,6 +194,13 @@ const ensureSentence = (value) => {
   return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 };
 
+const normalizeFailureClause = (value = '') => {
+  if (!value) return '';
+  return value.replace(/\bOn failure\b/i, (match) =>
+    match.charAt(0) === 'O' ? 'On a failure' : 'on a failure',
+  );
+};
+
 const createEnhancementDescription = (enh = {}) => {
   if (!enh) return '';
 
@@ -245,7 +252,7 @@ const createEnhancementDescription = (enh = {}) => {
       saveParts.push(ensureSentence(saveInfo.text));
     }
     if (saveInfo.effect) {
-      saveParts.push(ensureSentence(saveInfo.effect));
+      saveParts.push(ensureSentence(normalizeFailureClause(saveInfo.effect)));
     }
     parts.push(saveParts.filter(Boolean).join(' '));
   }
@@ -318,11 +325,26 @@ export const formatForPresentation = (raw, derived) => {
     }
   });
 
-  display.Combat.AttackEnhancements = (derived.attackEnhancements || []).map((enh) => ({
-    name: `${enh.name} (${enh.displayCost || 'Special'})`,
-    details: createEnhancementDescription(enh),
-    originalFeatureId: enh.originalFeatureId,
-  }));
+  display.Combat.AttackEnhancements = (derived.attackEnhancements || []).map((enh) => {
+    const saveInfo = extractSaveInfo(enh) || {};
+    const normalizedSaveEffect = normalizeFailureClause(
+      saveInfo.effect || enh.save?.effect || enh.saveEffect,
+    );
+
+    return {
+      name: `${enh.name} (${enh.displayCost || 'Special'})`,
+      details: createEnhancementDescription(enh),
+      originalFeatureId: enh.originalFeatureId,
+      saveAttribute: saveInfo.attribute || enh.saveAttribute || enh.save?.attribute || '',
+      saveDC:
+        typeof saveInfo.dc === 'number'
+          ? saveInfo.dc
+          : typeof enh.calculatedSaveDC === 'number'
+          ? enh.calculatedSaveDC
+          : enh.save?.dc || '',
+      saveEffect: normalizedSaveEffect || '',
+    };
+  });
 
   display.Reactions = (derived.reactions || []).map((reaction) => ({
     name: `${reaction.name} (${reaction.displayCost || 'Reaction'})`,

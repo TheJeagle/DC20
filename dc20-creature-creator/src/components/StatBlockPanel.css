@@ -596,6 +596,23 @@
     padding-left: 18px;
 }
 
+.enhancement-save-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.enhancement-save-fields span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.enhancement-save-fields .editable-subfield {
+    min-width: 60px;
+}
+
 .hover-remove-button:hover {
     color: #ff0000;
 }
