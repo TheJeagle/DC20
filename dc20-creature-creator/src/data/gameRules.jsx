@@ -46,7 +46,7 @@ export const roleModifiersData = {
         HPFactor: 0.5, PDMod: -2, ADMod: 2, CheckMod: 1, SpeedMod: -1, DamageMod: 0, MPMod: 0,
         SavesProficient: ["Int", "Cha", "Mig", "Agi"], // Attributes for proficient saves
         AttributePriority: ["Agi", "Int", "Cha", "Mig"], // Order for assigning from attributeScoresByLevel
-        Skills: ["stealth", "awareness", "acrobatics", "trickery"], Range: "10/30",
+        Skills: ["stealth", "awareness", "acrobatics", "trickery"], Range: "15/30 Spaces",
         isCaster: false, // Could be true for some artillerists
     },
     brute: {
@@ -57,7 +57,7 @@ export const roleModifiersData = {
     controller: {
         HPFactor: 1, PDMod: 0, ADMod: 2, CheckMod: 0, SpeedMod: 0, DamageMod: 0, MPMod: 6,
         SavesProficient: ["Int", "Cha", "Mig", "Agi"], AttributePriority: ["Cha", "Int", "Mig", "Agi"],
-        Skills: ["awareness", "insight", "trickery", "influence"], Range: "5/10", isCaster: true,
+        Skills: ["awareness", "insight", "trickery", "influence"], Range: "5/10 Spaces", isCaster: true,
     },
     defender: {
         HPFactor: 1.5, PDMod: 2, ADMod: 0, CheckMod: -1, SpeedMod: 0, DamageMod: 0, MPMod: 0,
@@ -67,12 +67,12 @@ export const roleModifiersData = {
     leader: {
         HPFactor: 1, PDMod: 0, ADMod: 2, CheckMod: 0, SpeedMod: 0, DamageMod: 0, MPMod: 0,
         SavesProficient: ["Int", "Cha", "Mig", "Agi"], AttributePriority: ["Cha", "Agi", "Int", "Mig"],
-        Skills: ["insight", "awareness", "influence", "intimidation"], Range: "5/10", isCaster: true,
+        Skills: ["insight", "awareness", "influence", "intimidation"], Range: "5/10 Spaces", isCaster: true,
     },
     lurker: {
         HPFactor: 0.75, PDMod: -2, ADMod: 0, CheckMod: 1, SpeedMod: 0, DamageMod: 1, MPMod: 0,
         SavesProficient: ["Int", "Cha", "Mig", "Agi"], AttributePriority: ["Agi", "Cha", "Int", "Mig"],
-        Skills: ["stealth", "awareness", "acrobatics", "trickery"], Range: "10/20 spaces",
+        Skills: ["stealth", "awareness", "acrobatics", "trickery"], Range: "10/20 Saces",
     },
     skirmisher: {
         HPFactor: 1, PDMod: 0, ADMod: 0, CheckMod: 0, SpeedMod: 1, DamageMod: 0, MPMod: 0,
@@ -82,12 +82,12 @@ export const roleModifiersData = {
     support: {
         HPFactor: 0.5, PDMod: 0, ADMod: 2, CheckMod: 0, SpeedMod: 0, DamageMod: 0, MPMod: 6,
         SavesProficient: ["Cha", "Agi"], AttributePriority: ["Cha", "Agi", "Int", "Mig"],
-        Skills: ["awareness", "influence", "insight"], isCaster: true, Range: "5/10 spaces"
+        Skills: ["awareness", "influence", "insight"], isCaster: true, Range: "5/10 Spaces"
     },
     caster: {
         HPFactor: 0.75, PDMod: -1, ADMod: 0, CheckMod: 0, SpeedMod: 0, DamageMod: 0, MPMod: 6,
         SavesProficient: ["Int", "Cha", "Mig", "Agi"], AttributePriority: ["Int", "Cha", "Agi", "Mig"],
-        Skills: ["awareness"], isCaster: true, Range: "10/20 spaces"
+        Skills: ["awareness"], isCaster: true, Range: "10/20 Spaces"
     },
     none: { // Default if no role is selected or for generic creatures
         HPFactor: 1, PDMod: 0, ADMod: 0, CheckMod: 0, SpeedMod: 0, DamageMod: 0, MPMod: 0,
