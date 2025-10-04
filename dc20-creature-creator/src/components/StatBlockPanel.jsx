@@ -51,13 +51,84 @@ const StatBlockPanel = forwardRef(
         };
 
         const normalizeRange = (source = {}) => {
-            if (typeof source.range === 'number') return source.range;
-            if (typeof source.rangeValue === 'number') return source.rangeValue;
-            if (typeof source.range === 'string') {
-                const match = source.range.match(/(\d+)/);
-                if (match) return parseInt(match[1], 10);
+            const explicitValue =
+                typeof source.rangeValue === 'number' && Number.isFinite(source.rangeValue)
+                    ? source.rangeValue
+                    : undefined;
+            const explicitUnit = source.rangeUnit;
+            const rawRange = source.range ?? source.rangeText;
+
+            if (rawRange && typeof rawRange === 'object') {
+                const value =
+                    typeof rawRange.value === 'number' && Number.isFinite(rawRange.value)
+                        ? rawRange.value
+                        : explicitValue;
+                const unit = rawRange.unit || explicitUnit;
+                const text =
+                    rawRange.text ||
+                    `${value ?? ''}${value != null && unit ? ` ${unit}` : unit ? ` ${unit}` : ''}`.trim();
+                return {
+                    range: { ...rawRange, text },
+                    rangeValue: value,
+                    rangeUnit: unit,
+                };
             }
-            return undefined;
+
+            if (typeof rawRange === 'number' && Number.isFinite(rawRange)) {
+                const unit = explicitUnit || (rawRange === 1 ? 'space' : 'spaces');
+                return {
+                    range: {
+                        value: rawRange,
+                        unit,
+                        text: `${rawRange} ${unit}`.trim(),
+                    },
+                    rangeValue: rawRange,
+                    rangeUnit: unit,
+                };
+            }
+
+            if (typeof rawRange === 'string' && rawRange.trim()) {
+                const text = rawRange.trim();
+                const match = text.match(/(-?\d+(?:\.\d+)?)/);
+                if (match) {
+                    const value = Number(match[1]);
+                    const trailing = text.slice(match.index + match[1].length).trim();
+                    const inferredUnit = trailing || explicitUnit || (value === 1 ? 'space' : 'spaces');
+                    const normalizedUnit = inferredUnit || undefined;
+                    return {
+                        range: {
+                            value,
+                            unit: normalizedUnit,
+                            text: trailing
+                                ? text
+                                : `${value}${normalizedUnit ? ` ${normalizedUnit}` : ''}`.trim(),
+                        },
+                        rangeValue: value,
+                        rangeUnit: normalizedUnit,
+                    };
+                }
+
+                return {
+                    range: { text },
+                    rangeValue: explicitValue,
+                    rangeUnit: explicitUnit,
+                };
+            }
+
+            if (explicitValue != null) {
+                const unit = explicitUnit || (explicitValue === 1 ? 'space' : 'spaces');
+                return {
+                    range: {
+                        value: explicitValue,
+                        unit,
+                        text: `${explicitValue} ${unit}`.trim(),
+                    },
+                    rangeValue: explicitValue,
+                    rangeUnit: unit,
+                };
+            }
+
+            return { range: null, rangeValue: undefined, rangeUnit: explicitUnit };
         };
 
         const normalizeTarget = (source = {}) => source.target || source.targetDescription || source.targets || '';
@@ -68,32 +139,53 @@ const StatBlockPanel = forwardRef(
             if (source.damage && typeof source.damage === 'object') {
                 return source.damage;
             }
+
+            if (typeof source.damage === 'number' && Number.isFinite(source.damage)) {
+                return {
+                    base: source.damage,
+                    modifier: 0,
+                    type: source.damageType || null,
+                };
+            }
+
             const modifier = typeof source.damageMod === 'number' ? source.damageMod : 0;
             const type = source.damageType || null;
-            if (modifier !== 0 || type) {
+            const base =
+                typeof source.baseDamageOverride === 'number' && Number.isFinite(source.baseDamageOverride)
+                    ? source.baseDamageOverride
+                    : undefined;
+
+            if (typeof base === 'number' || modifier !== 0 || type) {
                 return {
+                    ...(typeof base === 'number' ? { base } : {}),
                     modifier,
                     type,
                 };
             }
+
             return undefined;
         };
 
         const normalizeDefense = (source = {}) => source.defense || source.targetsDefense || null;
 
-        const assembleAction = (base = {}) => ({
-            name: base.name,
-            cost: normalizeCost(base),
-            damage: normalizeDamage(base),
-            defense: normalizeDefense(base),
-            range: normalizeRange(base),
-            target: normalizeTarget(base),
-            summary: normalizeSummary(base),
-            method: base.method || base.actionType || base.type || '',
-            trigger: base.trigger || null,
-            category: base.category || base.kind || 'action',
-            kind: base.kind || base.category || 'action',
-        });
+        const assembleAction = (base = {}) => {
+            const { range, rangeValue, rangeUnit } = normalizeRange(base);
+            return {
+                name: base.name,
+                cost: normalizeCost(base),
+                damage: normalizeDamage(base),
+                defense: normalizeDefense(base),
+                range,
+                rangeValue,
+                rangeUnit,
+                target: normalizeTarget(base),
+                summary: normalizeSummary(base),
+                method: base.method || base.actionType || base.type || '',
+                trigger: base.trigger || null,
+                category: base.category || base.kind || 'action',
+                kind: base.kind || base.category || 'action',
+            };
+        };
 
         const resolvedDefaultAttacks = defaultDisplayAttacks.length > 0
             ? defaultDisplayAttacks.map((attack, index) => ({
