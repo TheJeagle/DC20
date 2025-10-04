@@ -251,7 +251,125 @@ const StatBlockPanel = forwardRef(
                 action: assembleAction(action),
             }));
 
-    const resolveInlineDetails = (rawAction = {}, displayAction = {}) => {
+    const actionIsAttackLike = (action = {}) => {
+        const type = (action.actionType || action.method || '').toLowerCase();
+        return type.includes('attack') || type.includes('spell');
+    };
+
+    const ensureTerminalPunctuation = (text = '') => {
+        if (!text) return '';
+        const trimmed = text.trim();
+        if (!trimmed) return '';
+        return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+    };
+
+    const extractSaveDetailText = (rawAction = {}, derivedAction = {}) => {
+        const candidates = [
+            derivedAction.saveText,
+            typeof rawAction.save === 'string' ? rawAction.save : null,
+            rawAction.save?.text,
+            rawAction.save?.summary,
+            rawAction.save?.description,
+        ];
+        let saveClause = '';
+        for (const candidate of candidates) {
+            if (typeof candidate === 'string' && candidate.trim().length > 0) {
+                saveClause = candidate.trim();
+                break;
+            }
+        }
+
+        if (!saveClause && typeof rawAction.saveAttribute === 'string' && rawAction.saveAttribute.trim()) {
+            saveClause = `${rawAction.saveAttribute.trim()} save`;
+        }
+
+        const dcCandidates = [
+            derivedAction.calculatedSaveDC,
+            rawAction.save?.dc,
+            rawAction.save?.dc?.value,
+            rawAction.save?.dc?.total,
+            rawAction.saveDC,
+            rawAction.saveDCMod != null
+                ? rawAction.baseSaveDC && typeof rawAction.baseSaveDC === 'number'
+                    ? rawAction.baseSaveDC + rawAction.saveDCMod
+                    : null
+                : null,
+        ];
+        const resolvedDC = dcCandidates.find((value) => typeof value === 'number' && Number.isFinite(value));
+
+        const effectCandidates = [
+            rawAction.save?.effect,
+            rawAction.save?.onFail,
+            rawAction.save?.onFailure,
+            rawAction.save?.failure,
+            rawAction.save?.failureEffect,
+            rawAction.saveEffect,
+            rawAction.onFailure,
+            rawAction.failureEffect,
+        ];
+        let effectClause = '';
+        for (const candidate of effectCandidates) {
+            if (typeof candidate === 'string' && candidate.trim().length > 0) {
+                effectClause = candidate.trim();
+                break;
+            }
+        }
+
+        if (!saveClause && !effectClause) {
+            return '';
+        }
+
+        const pieces = [];
+
+        if (saveClause) {
+            let clause = saveClause;
+            if (typeof resolvedDC === 'number' && !/\bDC\b/i.test(clause)) {
+                clause = `${clause} (DC ${resolvedDC})`;
+            }
+            pieces.push(ensureTerminalPunctuation(clause));
+        }
+
+        if (effectClause) {
+            const normalizedEffect = effectClause.replace(/\bOn\s+failure\b/i, (match) =>
+                match.charAt(0) === 'O' ? 'On failure' : 'on failure',
+            );
+            pieces.push(ensureTerminalPunctuation(normalizedEffect));
+        }
+
+        return pieces.join(' ');
+    };
+
+    const filterDisplayDetails = (detailText = '', summaryText = '', treatAsAttack = false) => {
+        if (!detailText) return '';
+
+        const summaryNormalized = summaryText
+            ? summaryText.trim().replace(/[.!?]+$/, '').toLowerCase()
+            : '';
+
+        const sentences = detailText.match(/[^.!?]+[.!?]?/g) || [];
+        const filtered = sentences
+            .map((sentence) => sentence.trim())
+            .filter((sentence) => {
+                if (!sentence) return false;
+                const normalizedSentence = sentence.replace(/[.!?]+$/, '').trim().toLowerCase();
+                if (summaryNormalized && normalizedSentence === summaryNormalized) {
+                    return false;
+                }
+                if (treatAsAttack) {
+                    const damagePattern = /^\[?\s*\d+\s+[a-z]/i;
+                    const targetPattern = /^\[?\s*targets?\b/i;
+                    const rangePattern = /^\[?\s*range\b/i;
+                    if (damagePattern.test(sentence)) return false;
+                    if (targetPattern.test(sentence)) return false;
+                    if (rangePattern.test(sentence)) return false;
+                }
+                return true;
+            });
+
+        return filtered.join(' ');
+    };
+
+    const resolveInlineDetails = (rawAction = {}, displayAction = {}, derivedAction = {}) => {
         const candidates = [rawAction.details, rawAction.description, rawAction.descriptionCore];
         for (const candidate of candidates) {
             if (typeof candidate === 'string' && candidate.trim().length > 0) {
@@ -264,11 +382,15 @@ const StatBlockPanel = forwardRef(
                 ? displayAction.details.trim()
                 : '';
 
-        const actionType = rawAction.actionType || rawAction.method || '';
-        const typeLower = actionType.toLowerCase();
-        const isAttackType = typeLower.includes('attack') || typeLower.includes('spell');
+        const summaryText = typeof rawAction.summary === 'string' ? rawAction.summary : '';
+        const isAttackType = actionIsAttackLike(rawAction);
+        const filteredDetails = filterDisplayDetails(displayDetails, summaryText, isAttackType);
 
-        return isAttackType ? '' : displayDetails;
+        if (filteredDetails) {
+            return filteredDetails;
+        }
+
+        return extractSaveDetailText(rawAction, derivedAction);
     };
 
     const getEditableNumericValue = (statString) => {
@@ -500,7 +622,7 @@ const StatBlockPanel = forwardRef(
                                         ...act,
                                         damage: derivedAction?.calculatedDamage ?? act.damage,
                                         calculatedDamage: derivedAction?.calculatedDamage,
-                                        details: resolveInlineDetails(act, displayAction || {}),
+                                        details: resolveInlineDetails(act, displayAction || {}, derivedAction || {}),
                                     }}
                                     onSaveField={(field, val) => handleActionFieldSave(idx, field, val)}
                                 />
@@ -517,7 +639,7 @@ const StatBlockPanel = forwardRef(
                                 <ActionInlineDisplay
                                     action={{
                                         ...act,
-                                        details: resolveInlineDetails(act, displayAction || {}),
+                                        details: resolveInlineDetails(act, displayAction || {}, derivedAction || {}),
                                         damage: derivedAction?.calculatedDamage ?? act.damage,
                                         calculatedDamage: derivedAction?.calculatedDamage,
                                     }}
