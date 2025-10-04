@@ -336,10 +336,10 @@ const creatureFeatures = [
     id: 'enhance_hemorrhage',
     name: 'Hemorrhage',
     kind: 'attack_enhancement',
-    summary: 'Your strike opens a vicious wound, inflicting Bleeding on a failed Physical save.',
-    cost: {},
+    summary: 'Your strike opens a vicious wound.',
+    cost: {ap:1},
     save: { attribute: 'Physical', effect: 'On failure, the target begins Bleeding' },
-    tags: ['brute', 'bleed'],
+    tags: ['brute', 'bleed', "enhancement"],
   },
   {
     id: 'enhance_freezing_mark',
