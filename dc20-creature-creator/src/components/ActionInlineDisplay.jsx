@@ -69,6 +69,32 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
         return '';
     })();
 
+    const hasNumericDamageMod = typeof action.damageMod === 'number' && Number.isFinite(action.damageMod);
+    const hasNumericDamageBonus = typeof action.damageBonus === 'number' && Number.isFinite(action.damageBonus);
+    const hasDamageDetails = (() => {
+        if (typeof damage === 'number') return true;
+        if (damage && typeof damage === 'object') {
+            const numericKeys = ['base', 'total', 'modifier', 'bonus'];
+            const hasMeaningfulNumeric = numericKeys.some((key) => {
+                const value = damage[key];
+                return typeof value === 'number' && Number.isFinite(value) && value !== 0;
+            });
+            if (hasMeaningfulNumeric) {
+                return true;
+            }
+            return false;
+        }
+        if (hasNumericDamageMod) {
+            return Boolean(action.isAttack || (damage && typeof damage === 'object') || typeof damage === 'number');
+        }
+        if (hasNumericDamageBonus) {
+            return Boolean(action.isAttack || (damage && typeof damage === 'object') || typeof damage === 'number');
+        }
+        return false;
+    })();
+    const shouldRenderDamage =
+        typeof resolvedDamageAmount === 'number' || action.isAttack || hasDamageDetails;
+
     const targetDisplay = (() => {
         if (typeof target === 'string') return target;
         if (target && typeof target === 'object') return target.text || target.summary || target.description || '';
@@ -171,45 +197,50 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
             <strong>{renderCost()}</strong>
             ):
             {' '}
-            {typeof resolvedDamageAmount === 'number' ? (
-                <EditableField
-                    value={resolvedDamageAmount}
-                    onSave={(f, val) => handleDamageTotalSave(val)}
-                    fieldType="number"
-                    className="editable-number-field"
-                />
-            ) : (
-                'damage '
+            {shouldRenderDamage && (
+                <>
+                    {typeof resolvedDamageAmount === 'number' ? (
+                        <EditableField
+                            value={resolvedDamageAmount}
+                            onSave={(f, val) => handleDamageTotalSave(val)}
+                            fieldType="number"
+                            className="editable-number-field"
+                        />
+                    ) : (
+                        'damage '
+                    )}
+                    <EditableField
+                        value={resolvedDamageType}
+                        onSave={(f, val) => handleSave('damageType', val)}
+                        fieldType="text"
+                        className="editable-description-field"
+                    />{' '}
+                    damage vs{' '}
+                    {isEditingDefense ? (
+                        <select
+                            value={defense}
+                            onChange={(e) => {
+                                handleSave('defense', e.target.value);
+                                setIsEditingDefense(false);
+                            }}
+                            onBlur={() => setIsEditingDefense(false)}
+                            className="editable-select"
+                        >
+                            <option value="PD">PD</option>
+                            <option value="AD">AD</option>
+                        </select>
+                    ) : (
+                        <span
+                            onDoubleClick={() => setIsEditingDefense(true)}
+                            className="editable-select-span"
+                        >
+                            {resolvedDefense}
+                        </span>
+                    )}
+                    .{' '}
+                </>
             )}
-            <EditableField
-                value={resolvedDamageType}
-                onSave={(f, val) => handleSave('damageType', val)}
-                fieldType="text"
-                className="editable-description-field"
-            />{' '}
-            damage vs{' '}
-            {isEditingDefense ? (
-                <select
-                    value={defense}
-                    onChange={(e) => {
-                        handleSave('defense', e.target.value);
-                        setIsEditingDefense(false);
-                    }}
-                    onBlur={() => setIsEditingDefense(false)}
-                    className="editable-select"
-                >
-                    <option value="PD">PD</option>
-                    <option value="AD">AD</option>
-                </select>
-            ) : (
-                <span
-                    onDoubleClick={() => setIsEditingDefense(true)}
-                    className="editable-select-span"
-                >
-                    {resolvedDefense}
-                </span>
-            )}
-            . Target{' '}
+            Target{' '}
             <EditableField
                 value={targetDisplay}
                 onSave={(f, val) => handleSave('target.text', val)}

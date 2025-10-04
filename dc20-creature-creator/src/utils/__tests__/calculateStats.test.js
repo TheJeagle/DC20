@@ -112,6 +112,40 @@ describe('calculateCreatureStats', () => {
     expect(strike.details).toContain('3 physical damage vs PD');
   });
 
+  it('does not assign damage to non-attack utility actions', () => {
+    const inputs = {
+      level: 1,
+      power: 'normal',
+      role: 'none',
+      type: 'beast',
+      size: 'medium',
+      creatureName: 'Support Test'
+    };
+
+    const rally = {
+      id: 'action_command_rally',
+      name: 'Command: Rally',
+      category: 'action',
+      method: 'Buff',
+      summary: 'You bark orders that steel your allies, granting them a Help Dice (d8) until the end of their next turn.',
+      cost: { ap: 2 },
+      range: '5 Spaces',
+      target: 'up to 2 allies you can see'
+    };
+
+    const result = calculateCreatureStats(inputs, [rally], {});
+    const [derivedAction] = result.derived.combatActions;
+    const [displayAction] = result.display.Combat.OtherActions;
+
+    expect(derivedAction).toBeDefined();
+    expect(derivedAction.isAttack).toBe(false);
+    expect(derivedAction.damage == null).toBe(true);
+    expect(derivedAction.calculatedDamage).toBeUndefined();
+    if (displayAction?.details) {
+      expect(displayAction.details).not.toMatch(/damage/i);
+    }
+  });
+
   it('applies overrides to default attacks', () => {
     const inputs = {
       level: 1,
