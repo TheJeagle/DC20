@@ -95,13 +95,151 @@ const toCostObject = (action = {}) => {
   };
 };
 
+const toNumeric = (value) => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+};
+
+const normalizeDamage = (action = {}) => {
+  const rawDamage = action.damage;
+  const resolvedType =
+    (rawDamage && typeof rawDamage === 'object' && rawDamage.type) || action.damageType || '';
+
+  if (!rawDamage && !action.damageMod && !action.damageBonus) {
+    return { modifier: 0, type: resolvedType };
+  }
+
+  if (typeof rawDamage === 'number') {
+    return {
+      base: rawDamage,
+      modifier: toNumeric(action.damageMod) || 0,
+      total: rawDamage + (toNumeric(action.damageMod) || 0),
+      type: resolvedType,
+    };
+  }
+
+  const modifier =
+    toNumeric(rawDamage?.modifier) ??
+    toNumeric(rawDamage?.bonus) ??
+    toNumeric(action.damageMod) ??
+    toNumeric(action.damageBonus) ??
+    0;
+
+  const base =
+    toNumeric(rawDamage?.base) ??
+    (typeof rawDamage?.total === 'number' && Number.isFinite(modifier)
+      ? rawDamage.total - modifier
+      : undefined);
+
+  const total =
+    toNumeric(rawDamage?.total) ??
+    (typeof base === 'number'
+      ? Math.ceil(base + (Number.isFinite(modifier) ? modifier : 0))
+      : undefined);
+
+  return {
+    ...(rawDamage && typeof rawDamage === 'object' ? { ...rawDamage } : {}),
+    base,
+    modifier,
+    bonus:
+      rawDamage && typeof rawDamage === 'object' && typeof rawDamage.bonus !== 'undefined'
+        ? rawDamage.bonus
+        : undefined,
+    total,
+    type: resolvedType,
+  };
+};
+
+const normalizeRange = (action = {}) => {
+  const explicitValue = toNumeric(action.rangeValue);
+  const explicitUnit = action.rangeUnit;
+  const rawRange = action.range ?? action.rangeText;
+
+  if (rawRange && typeof rawRange === 'object') {
+    const text = rawRange.text || `${rawRange.value || explicitValue || ''} ${rawRange.unit || explicitUnit || ''}`.trim();
+    return {
+      range: { ...rawRange, text },
+      rangeValue: toNumeric(rawRange.value) ?? explicitValue,
+      rangeUnit: rawRange.unit || explicitUnit || undefined,
+    };
+  }
+
+  if (typeof rawRange === 'number') {
+    const inferredUnit = explicitUnit || (rawRange === 1 ? 'space' : 'spaces');
+    const text = `${rawRange} ${inferredUnit}`.trim();
+    return {
+      range: { value: rawRange, unit: inferredUnit, text },
+      rangeValue: rawRange,
+      rangeUnit: inferredUnit || undefined,
+    };
+  }
+
+  if (typeof rawRange === 'string' && rawRange.trim().length > 0) {
+    const text = rawRange.trim();
+    const match = text.match(/(-?\d+(?:\.\d+)?)/);
+    const value = match ? Number(match[1]) : explicitValue;
+    const rawUnitCandidate = match ? text.slice(match.index + match[1].length).trim() : '';
+    const inferredUnit =
+      rawUnitCandidate ||
+      explicitUnit ||
+      (typeof value === 'number' && Number.isFinite(value)
+        ? value === 1
+          ? 'space'
+          : 'spaces'
+        : undefined);
+    const normalizedText =
+      rawUnitCandidate || !value
+        ? text
+        : `${value} ${inferredUnit}`.trim();
+    return {
+      range: {
+        text: normalizedText,
+        ...(typeof value === 'number' && Number.isFinite(value) ? { value } : {}),
+        ...(inferredUnit ? { unit: inferredUnit.replace(/s$/, '') } : {}),
+      },
+      rangeValue: typeof value === 'number' && Number.isFinite(value) ? value : explicitValue,
+      rangeUnit:
+        inferredUnit && typeof inferredUnit === 'string'
+          ? inferredUnit.replace(/s$/, '')
+          : explicitUnit || undefined,
+    };
+  }
+
+  if (typeof explicitValue === 'number') {
+    const unit = explicitUnit || (explicitValue === 1 ? 'space' : 'spaces');
+    const text = `${explicitValue} ${unit}`.trim();
+    return {
+      range: { value: explicitValue, unit, text },
+      rangeValue: explicitValue,
+      rangeUnit: unit || undefined,
+    };
+  }
+
+  return { range: rawRange || '', rangeValue: explicitValue, rangeUnit: explicitUnit || undefined };
+};
+
+const normalizeTarget = (action = {}) => {
+  if (action.target && typeof action.target === 'object') return action.target;
+  const textCandidate =
+    (typeof action.target === 'string' && action.target.trim()) ||
+    (typeof action.targetDescription === 'string' && action.targetDescription.trim()) ||
+    (typeof action.targets === 'string' && action.targets.trim()) ||
+    '';
+  return textCandidate ? { text: textCandidate } : action.target;
+};
+
 const mapDisplayAction = (action = {}, source = 'default') => {
   const cost = toCostObject(action);
-  const target = action.target?.text || action.target || action.targetDescription || action.targets || '';
-  const range =
-    (action.range && typeof action.range === 'object'
-      ? action.range.text || `${action.range.value || ''} ${action.range.unit || ''}`.trim()
-      : action.range) || '';
+  const normalizedDamage = normalizeDamage(action);
+  const normalizedRange = normalizeRange(action);
+  const target = normalizeTarget(action);
+
+  const saveDcMod = toNumeric(action.save?.dcMod);
+  const fallbackSaveDcMod = toNumeric(action.saveDCMod);
 
   return {
     name: action.name || '',
@@ -109,12 +247,15 @@ const mapDisplayAction = (action = {}, source = 'default') => {
     costAP: cost.ap,
     costMP: cost.mp,
     costSP: cost.sp,
-    damage: action.damage || { modifier: action.damageMod || 0, type: action.damageType },
-    damageMod: action.damage?.modifier || action.damageMod || 0,
+    damage: normalizedDamage,
+    damageMod: toNumeric(normalizedDamage?.modifier) || 0,
     save: action.save || null,
-    saveDCMod: action.save?.dcMod || action.saveDCMod || 0,
-    range,
+    saveDCMod: saveDcMod ?? fallbackSaveDcMod ?? 0,
+    range: normalizedRange.range,
+    rangeValue: normalizedRange.rangeValue,
+    rangeUnit: normalizedRange.rangeUnit,
     target,
+    targetDescription: target?.text || action.targetDescription || '',
     defense: action.defense || action.targetsDefense || '',
     actionType: action.actionType || action.type || '',
     description: action.summary || action.descriptionCore || action.description || '',

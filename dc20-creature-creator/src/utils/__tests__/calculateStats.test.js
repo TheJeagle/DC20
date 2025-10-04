@@ -62,8 +62,54 @@ describe('calculateCreatureStats', () => {
     expect(displayAttack).toBeDefined();
     expect(displayAttack.details).toContain('4 fire damage vs PD.');
     expect(displayAttack.details).toContain('Target 1 creature within 1 space.');
-    expect(displayAttack.details).toContain('Mig save (DC 16).');
+    expect(displayAttack.details).toContain('Might (DC 16).');
 
+  });
+
+  it('includes base damage and range in default melee attack descriptions', () => {
+    const inputs = {
+      level: 1,
+      power: 'normal',
+      role: 'none',
+      type: 'beast',
+      size: 'medium',
+      creatureName: 'Default Attack Check'
+    };
+
+    const result = calculateCreatureStats(inputs, [], {});
+    const defaultAttack = result.display.Combat.Attacks[0];
+
+    expect(defaultAttack).toBeDefined();
+    expect(defaultAttack.details).toContain('physical damage vs PD');
+    expect(defaultAttack.details).toContain('Target 1 creature within 1 space.');
+  });
+
+  it('treats damage bonuses as modifiers when calculating action damage', () => {
+    const inputs = {
+      level: 1,
+      power: 'normal',
+      role: 'none',
+      type: 'beast',
+      size: 'medium',
+      creatureName: 'Bonus Damage Test'
+    };
+
+    const powerStrike = {
+      name: 'Power Strike',
+      category: 'action',
+      method: 'Melee Martial Attack',
+      cost: { ap: 2 },
+      damage: { bonus: 1, type: 'physical' },
+      defense: 'PD',
+      range: 'melee',
+      target: '1 creature'
+    };
+
+    const result = calculateCreatureStats(inputs, [powerStrike], {});
+    const strike = result.display.Combat.Attacks.find((a) => a.name.startsWith('Power Strike'));
+
+    expect(strike).toBeDefined();
+    expect(strike.details).toContain('3 physical damage vs PD');
   });
 
   it('applies overrides to default attacks', () => {

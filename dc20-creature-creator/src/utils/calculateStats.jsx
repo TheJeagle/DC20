@@ -56,7 +56,10 @@ const extractSaveText = (action = {}) => {
 const enhanceActionData = (rawStats, actions = []) =>
   actions.map((action) => {
     const category = action.category || 'action';
-    const damageModifier = toNumberOr(action.damage?.modifier, toNumberOr(action.damageMod, 0));
+    const damageModifier = toNumberOr(
+      action.damage?.modifier,
+      toNumberOr(action.damage?.bonus, toNumberOr(action.damageMod, 0)),
+    );
     const damageBaseOverride =
       typeof action.damage?.base === 'number'
         ? action.damage.base
@@ -105,7 +108,10 @@ const enhanceActionData = (rawStats, actions = []) =>
 const enhanceEnhancements = (rawStats, enhancements = []) =>
   enhancements.map((enh) => {
     const category = enh.category || 'attack_enhancement';
-    const damageModifier = toNumberOr(enh.damage?.modifier, toNumberOr(enh.damageMod, 0));
+    const damageModifier = toNumberOr(
+      enh.damage?.modifier,
+      toNumberOr(enh.damage?.bonus, toNumberOr(enh.damageMod, 0)),
+    );
     const damageBaseOverride =
       typeof enh.damage?.base === 'number'
         ? enh.damage.base

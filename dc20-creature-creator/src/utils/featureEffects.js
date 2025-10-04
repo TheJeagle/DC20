@@ -124,6 +124,16 @@ const normalizeRange = (feature) => {
     };
   }
 
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    const unit = feature.rangeUnit || (raw === 1 ? 'space' : 'spaces');
+    const text = `${raw} ${unit}`.trim();
+    return {
+      value: raw,
+      unit: unit || undefined,
+      text,
+    };
+  }
+
   if (raw && typeof raw === 'object') {
     const text =
       raw.text ||
@@ -169,7 +179,7 @@ const normalizeTarget = (feature) => {
 const normalizeDamage = (feature) => {
   const raw = feature.damage && typeof feature.damage === 'object' ? { ...feature.damage } : {};
   if (typeof raw.modifier !== 'number') {
-    raw.modifier = numberOr(feature.damageMod, 0);
+    raw.modifier = numberOr(raw.bonus, numberOr(feature.damageMod, 0));
   }
   if (!raw.type && feature.damageType) {
     raw.type = feature.damageType;
@@ -240,7 +250,8 @@ const mapActionFeature = (feature) => {
     id: feature.id,
     name: feature.name,
     category: feature.category,
-    actionType: feature.actionType,
+    actionType: feature.actionType || feature.method,
+    method: feature.method,
     cost,
     costAP: cost.ap,
     costMP: cost.mp,
