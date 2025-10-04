@@ -373,13 +373,19 @@ const StatBlockPanel = forwardRef(
                     <h4 className="sb-sub-section-title"><GiUpgrade className="sb-section-icon" />Attack Enhancements</h4>
                     {display.Combat.AttackEnhancements.map((enh, index) => {
                         const rawEnhancement = finalRaw.AttackEnhancements?.[index];
+                        const hasDisplaySaveDC = enh.saveDC !== '' && enh.saveDC !== null && typeof enh.saveDC !== 'undefined';
                         const showSaveEditors = Boolean(
                             rawEnhancement?.save ||
                             rawEnhancement?.saveAttribute ||
                             enh.saveAttribute ||
                             enh.saveEffect ||
-                            typeof enh.saveDC !== 'undefined'
+                            hasDisplaySaveDC
                         );
+
+                        const attributeValueRaw = enh.saveAttribute ?? '';
+                        const attributeHasValue =
+                            (typeof attributeValueRaw === 'string' && attributeValueRaw.trim().length > 0) ||
+                            (typeof attributeValueRaw !== 'string' && attributeValueRaw !== '' && attributeValueRaw !== null && typeof attributeValueRaw !== 'undefined');
 
                         return (
                             <div key={enh.originalFeatureId || `enhance-${index}`} className="sb-list-item enhancement-item">
@@ -392,48 +398,43 @@ const StatBlockPanel = forwardRef(
                                         className="editable-name-field"
                                     />
                                     <br />
-                                    <EditableField
-                                        value={enh.details}
-                                        onSave={(f, val) => handleSave(`Combat_AttackEnhancements_${index}_details_set`, val)}
-                                        fieldName={`Combat_AttackEnhancements_${index}_details_set`}
-                                        fieldType="text"
-                                        className="editable-description-field"
-                                    />
+                                    <span className="enhancement-text-line">
+                                        <EditableField
+                                            value={enh.summary || enh.details || ''}
+                                            onSave={(f, val) => handleSave(`Combat_AttackEnhancements_${index}_summary_set`, val)}
+                                            fieldName={`Combat_AttackEnhancements_${index}_summary_set`}
+                                            fieldType="text"
+                                            className="editable-description-field enhancement-summary-field"
+                                        />
+                                        {showSaveEditors && (
+                                            <>
+                                                {' '}The target makes a DC{' '}
+                                                <EditableField
+                                                    value={enh.saveDC ?? ''}
+                                                    onSave={(f, val) => handleSave(`Combat_AttackEnhancements_${index}_save_dc_set`, val)}
+                                                    fieldName={`Combat_AttackEnhancements_${index}_save_dc_set`}
+                                                    fieldType="number"
+                                                    className="enhancement-inline-field enhancement-save-dc"
+                                                />{' '}
+                                                <EditableField
+                                                    value={enh.saveAttribute ?? ''}
+                                                    onSave={(f, val) => handleSave(`Combat_AttackEnhancements_${index}_save_attribute_set`, val)}
+                                                    fieldName={`Combat_AttackEnhancements_${index}_save_attribute_set`}
+                                                    fieldType="text"
+                                                    className="enhancement-inline-field enhancement-save-attribute"
+                                                />
+                                                {attributeHasValue ? ' save.' : 'save.'}{' '}
+                                                <EditableField
+                                                    value={enh.saveEffect ?? ''}
+                                                    onSave={(f, val) => handleSave(`Combat_AttackEnhancements_${index}_save_effect_set`, val)}
+                                                    fieldName={`Combat_AttackEnhancements_${index}_save_effect_set`}
+                                                    fieldType="text"
+                                                    className="enhancement-inline-field enhancement-save-effect"
+                                                />
+                                            </>
+                                        )}
+                                    </span>
                                 </p>
-                                {showSaveEditors && (
-                                    <div className="enhancement-save-fields">
-                                        <span>
-                                            Save Attribute:{' '}
-                                            <EditableField
-                                                value={enh.saveAttribute ?? ''}
-                                                onSave={(f, val) => handleSave(`Combat_AttackEnhancements_${index}_save_attribute_set`, val)}
-                                                fieldName={`Combat_AttackEnhancements_${index}_save_attribute_set`}
-                                                fieldType="text"
-                                                className="editable-subfield"
-                                            />
-                                        </span>
-                                        <span>
-                                            Save DC:{' '}
-                                            <EditableField
-                                                value={enh.saveDC ?? ''}
-                                                onSave={(f, val) => handleSave(`Combat_AttackEnhancements_${index}_save_dc_set`, val)}
-                                                fieldName={`Combat_AttackEnhancements_${index}_save_dc_set`}
-                                                fieldType="number"
-                                                className="editable-subfield"
-                                            />
-                                        </span>
-                                        <span>
-                                            Save Effect:{' '}
-                                            <EditableField
-                                                value={enh.saveEffect ?? ''}
-                                                onSave={(f, val) => handleSave(`Combat_AttackEnhancements_${index}_save_effect_set`, val)}
-                                                fieldName={`Combat_AttackEnhancements_${index}_save_effect_set`}
-                                                fieldType="text"
-                                                className="editable-description-field"
-                                            />
-                                        </span>
-                                    </div>
-                                )}
                                 {enh.originalFeatureId && <HoverRemoveButton onClick={() => onRemoveFeature(findOriginalItemForRemove(enh, "AttackEnhancements"))} />}
                             </div>
                         );

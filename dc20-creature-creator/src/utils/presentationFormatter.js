@@ -196,8 +196,10 @@ const ensureSentence = (value) => {
 
 const normalizeFailureClause = (value = '') => {
   if (!value) return '';
-  return value.replace(/\bOn failure\b/i, (match) =>
-    match.charAt(0) === 'O' ? 'On a failure' : 'on a failure',
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  return trimmed.replace(/\bOn\s+(?:an?\s+)?failure\b/i, (match) =>
+    match.charAt(0) === 'O' ? 'On failure' : 'on failure',
   );
 };
 
@@ -210,51 +212,41 @@ const createEnhancementDescription = (enh = {}) => {
     parts.push(ensureSentence(summaryText));
   }
 
-  const {
-    summary: _omitSummary,
-    save: _omitSave,
-    saveText: _omitSaveText,
-    saveAttribute: _omitSaveAttribute,
-    conditionApplied: _omitConditionApplied,
-    conditionDuration: _omitConditionDuration,
-    ...restEnh
-  } = enh;
-  const sanitizedExtras = { ...restEnh };
-  const sanitizedAttack = {
-    damage: enh.damage,
-    defense: enh.defense,
-    target: enh.target,
-    range: enh.range,
-  };
-
-  const additionalDescription = createAttackDescription(sanitizedAttack, sanitizedExtras).trim();
-  if (additionalDescription) {
-    parts.push(additionalDescription);
+  const descriptionText =
+    typeof enh.description === 'string' ? enh.description.trim() : '';
+  if (descriptionText && descriptionText !== summaryText) {
+    parts.push(ensureSentence(descriptionText));
   }
 
   const saveInfo = extractSaveInfo(enh);
   if (saveInfo && (saveInfo.text || saveInfo.attribute || saveInfo.effect || typeof saveInfo.dc === 'number')) {
-    const saveParts = [];
-    const basePieces = [];
+    const structuredPieces = [];
     if (typeof saveInfo.dc === 'number') {
-      basePieces.push(`DC ${saveInfo.dc}`);
+      structuredPieces.push(`DC ${saveInfo.dc}`);
     }
-    const normalizedText = saveInfo.attribute
-      ? `${saveInfo.attribute} save`
-      : (saveInfo.text || '').trim();
-    if (normalizedText) {
-      basePieces.push(normalizedText);
+    if (saveInfo.attribute) {
+      structuredPieces.push(saveInfo.attribute);
     }
-    const baseSentence = basePieces.join(' ').trim();
-    if (baseSentence) {
-      saveParts.push(ensureSentence(baseSentence));
-    } else if ((saveInfo.text || '').trim()) {
-      saveParts.push(ensureSentence(saveInfo.text));
+
+    let saveClause = structuredPieces.length > 0 ? `${structuredPieces.join(' ')} save` : '';
+    const rawSaveText = (saveInfo.text || '').trim();
+    if (!saveClause && rawSaveText) {
+      saveClause = rawSaveText.replace(/\.$/, '');
     }
+
+    if (saveClause) {
+      const normalizedClause = saveClause.startsWith('The target')
+        ? saveClause
+        : `The target makes a ${saveClause}`;
+      parts.push(ensureSentence(normalizedClause));
+    }
+
     if (saveInfo.effect) {
-      saveParts.push(ensureSentence(normalizeFailureClause(saveInfo.effect)));
+      const normalizedEffect = normalizeFailureClause(saveInfo.effect);
+      if (normalizedEffect) {
+        parts.push(ensureSentence(normalizedEffect));
+      }
     }
-    parts.push(saveParts.filter(Boolean).join(' '));
   }
 
   return parts
@@ -335,6 +327,7 @@ export const formatForPresentation = (raw, derived) => {
       name: `${enh.name} (${enh.displayCost || 'Special'})`,
       details: createEnhancementDescription(enh),
       originalFeatureId: enh.originalFeatureId,
+      summary: enh.summary || '',
       saveAttribute: saveInfo.attribute || enh.saveAttribute || enh.save?.attribute || '',
       saveDC:
         typeof saveInfo.dc === 'number'
