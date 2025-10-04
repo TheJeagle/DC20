@@ -20,7 +20,8 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
         rangeValue,
         rangeUnit,
         summary,
-        details = '',
+        details,
+        description,
     } = action;
 
     const resolvedDamageType = damage?.type || damageType || 'damage';
@@ -71,8 +72,16 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
 
     const normalizedSummary =
         typeof summary === 'string' && summary.trim().length > 0 ? summary.trim() : summary;
-    const normalizedDetails =
-        typeof details === 'string' && details.trim().length > 0 ? details.trim() : details;
+    const resolvedDetailsText = (() => {
+        if (typeof details === 'string' && details.trim().length > 0) {
+            return details.trim();
+        }
+        if (typeof description === 'string' && description.trim().length > 0) {
+            return description.trim();
+        }
+        return '';
+    })();
+    const normalizedDetails = resolvedDetailsText || undefined;
     const shouldRenderSummary = Boolean(normalizedSummary);
     const shouldRenderDetails = Boolean(normalizedDetails);
 
@@ -276,7 +285,7 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
                         <>
                             {shouldRenderSummary && <br />}
                             <EditableField
-                                value={details || ''}
+                                value={resolvedDetailsText}
                                 onSave={(f, val) => handleSave('details', val)}
                                 fieldType="text"
                                 className="editable-description-field"
