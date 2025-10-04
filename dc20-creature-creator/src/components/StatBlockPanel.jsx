@@ -133,7 +133,7 @@ const StatBlockPanel = forwardRef(
 
         const normalizeTarget = (source = {}) => source.target || source.targetDescription || source.targets || '';
 
-        const normalizeSummary = (source = {}) => source.summary || source.details || source.descriptionCore || source.description || '';
+        const normalizeSummary = (source = {}) => source.summary || source.descriptionCore || source.description || '';
 
         const normalizeDamage = (source = {}) => {
             const rawDamage = source.damage;
@@ -250,6 +250,26 @@ const StatBlockPanel = forwardRef(
                 key: `generated-default-attack-${index}`,
                 action: assembleAction(action),
             }));
+
+    const resolveInlineDetails = (rawAction = {}, displayAction = {}) => {
+        const candidates = [rawAction.details, rawAction.description, rawAction.descriptionCore];
+        for (const candidate of candidates) {
+            if (typeof candidate === 'string' && candidate.trim().length > 0) {
+                return candidate.trim();
+            }
+        }
+
+        const displayDetails =
+            typeof displayAction.details === 'string' && displayAction.details.trim().length > 0
+                ? displayAction.details.trim()
+                : '';
+
+        const actionType = rawAction.actionType || rawAction.method || '';
+        const typeLower = actionType.toLowerCase();
+        const isAttackType = typeLower.includes('attack') || typeLower.includes('spell');
+
+        return isAttackType ? '' : displayDetails;
+    };
 
     const getEditableNumericValue = (statString) => {
         if (typeof statString === 'string') {
@@ -480,7 +500,7 @@ const StatBlockPanel = forwardRef(
                                         ...act,
                                         damage: derivedAction?.calculatedDamage ?? act.damage,
                                         calculatedDamage: derivedAction?.calculatedDamage,
-                                        details: displayAction?.details,
+                                        details: resolveInlineDetails(act, displayAction || {}),
                                     }}
                                     onSaveField={(field, val) => handleActionFieldSave(idx, field, val)}
                                 />
@@ -497,7 +517,7 @@ const StatBlockPanel = forwardRef(
                                 <ActionInlineDisplay
                                     action={{
                                         ...act,
-                                        details: displayAction?.details,
+                                        details: resolveInlineDetails(act, displayAction || {}),
                                         damage: derivedAction?.calculatedDamage ?? act.damage,
                                         calculatedDamage: derivedAction?.calculatedDamage,
                                     }}
