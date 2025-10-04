@@ -69,6 +69,13 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
         return '';
     })();
 
+    const normalizedSummary =
+        typeof summary === 'string' && summary.trim().length > 0 ? summary.trim() : summary;
+    const normalizedDetails =
+        typeof details === 'string' && details.trim().length > 0 ? details.trim() : details;
+    const shouldRenderSummary = Boolean(normalizedSummary);
+    const shouldRenderDetails = Boolean(normalizedDetails);
+
     const hasNumericDamageMod = typeof action.damageMod === 'number' && Number.isFinite(action.damageMod);
     const hasNumericDamageBonus = typeof action.damageBonus === 'number' && Number.isFinite(action.damageBonus);
     const hasDamageDetails = (() => {
@@ -254,15 +261,28 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
                 fieldType="text"
                 className="editable-description-field"
             />.
-            {details && (
+            {(shouldRenderSummary || shouldRenderDetails) && (
                 <>
                     <br />
-                    <EditableField
-                        value={summary || ''}
-                        onSave={(f, val) => handleSave('summary', val)}
-                        fieldType="text"
-                        className="editable-description-field"
-                    />
+                    {shouldRenderSummary && (
+                        <EditableField
+                            value={summary || ''}
+                            onSave={(f, val) => handleSave('summary', val)}
+                            fieldType="text"
+                            className="editable-description-field"
+                        />
+                    )}
+                    {shouldRenderDetails && (
+                        <>
+                            {shouldRenderSummary && <br />}
+                            <EditableField
+                                value={details || ''}
+                                onSave={(f, val) => handleSave('details', val)}
+                                fieldType="text"
+                                className="editable-description-field"
+                            />
+                        </>
+                    )}
                 </>
             )}
         </p>
