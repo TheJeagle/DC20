@@ -177,9 +177,30 @@ const normalizeTarget = (feature) => {
 };
 
 const normalizeDamage = (feature) => {
+  const hasExplicitDamage = (() => {
+    if (typeof feature.damage === 'number') return true;
+    if (feature.damage && typeof feature.damage === 'object') {
+      return Object.keys(feature.damage).length > 0;
+    }
+    if (typeof feature.damageMod === 'number') return true;
+    if (typeof feature.damageBonus === 'number') return true;
+    if (typeof feature.baseDamageOverride === 'number') return true;
+    return false;
+  })();
+
+  if (!hasExplicitDamage) {
+    return null;
+  }
+
   const raw = feature.damage && typeof feature.damage === 'object' ? { ...feature.damage } : {};
   if (typeof raw.modifier !== 'number') {
-    raw.modifier = numberOr(raw.bonus, numberOr(feature.damageMod, 0));
+    if (typeof raw.bonus === 'number') {
+      raw.modifier = raw.bonus;
+    } else if (typeof feature.damageMod === 'number') {
+      raw.modifier = feature.damageMod;
+    } else if (typeof feature.damageBonus === 'number') {
+      raw.modifier = feature.damageBonus;
+    }
   }
   if (!raw.type && feature.damageType) {
     raw.type = feature.damageType;
