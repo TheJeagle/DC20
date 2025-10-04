@@ -596,6 +596,30 @@
     padding-left: 18px;
 }
 
+.enhancement-text-line {
+    display: inline;
+    line-height: 1.4;
+}
+
+.enhancement-text-line .editable-span,
+.enhancement-text-line .editable-input {
+    display: inline;
+    width: auto;
+    margin-left: 0;
+    padding: 1px 2px;
+}
+
+.enhancement-summary-field.editable-span,
+.enhancement-summary-field.editable-input {
+    font-weight: 500;
+}
+
+.enhancement-inline-field.editable-span,
+.enhancement-inline-field.editable-input {
+    min-width: 24px;
+    text-align: left;
+}
+
 .hover-remove-button:hover {
     color: #ff0000;
 }

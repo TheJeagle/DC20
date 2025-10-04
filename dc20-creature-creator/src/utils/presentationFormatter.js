@@ -72,24 +72,53 @@ const extractDamageInfo = (attack, extra) => {
 const extractSaveInfo = (extra) => {
   if (!extra) return null;
   if (extra.saveText) {
-    return { text: extra.saveText, dc: extra.calculatedSaveDC };
+    return {
+      text: extra.saveText,
+      dc: extra.calculatedSaveDC,
+    };
   }
   if (typeof extra.save === 'string') {
-    return { text: extra.save, dc: extra.calculatedSaveDC };
+    return {
+      text: extra.save,
+      dc: extra.calculatedSaveDC,
+    };
   }
   if (extra.save && typeof extra.save === 'object') {
-    const text = extra.save.text || extra.save.summary || extra.save.description || '';
-    return { text, dc: extra.calculatedSaveDC };
+    const attribute =
+      extra.save.attribute || extra.save.ability || extra.save.stat || extra.save.attributeName;
+    const effect =
+      extra.save.effect ||
+      extra.save.onFail ||
+      extra.save.onFailure ||
+      extra.save.failure ||
+      extra.save.failureEffect;
+    const text =
+      extra.save.text ||
+      extra.save.summary ||
+      extra.save.description ||
+      (attribute ? `${attribute} save` : '');
+    return {
+      text,
+      dc: extra.calculatedSaveDC,
+      attribute,
+      effect,
+    };
   }
   if (extra.saveAttribute) {
-    let saveText = `Target makes a ${extra.saveAttribute} save`;
+    const attribute = extra.saveAttribute;
+    let effectText = '';
     if (extra.conditionApplied) {
-      saveText += ` or becomes ${extra.conditionApplied}`;
+      effectText = `On a failure, the target becomes ${extra.conditionApplied}`;
       if (extra.conditionDuration) {
-        saveText += ` (${extra.conditionDuration.replace('your', 'its')})`;
+        effectText += ` (${extra.conditionDuration.replace('your', 'its')})`;
       }
     }
-    return { text: saveText, dc: extra.calculatedSaveDC };
+    return {
+      text: `Target makes a ${attribute} save`,
+      dc: extra.calculatedSaveDC,
+      attribute,
+      effect: effectText,
+    };
   }
   return null;
 };
@@ -119,6 +148,12 @@ const createAttackDescription = (attack, extra) => {
   if (saveInfo && saveInfo.text) {
     const dcText = typeof saveInfo.dc === 'number' ? ` (DC ${saveInfo.dc})` : '';
     parts.push(`${saveInfo.text}${dcText}.`);
+    if (saveInfo.effect) {
+      const trimmedEffect = saveInfo.effect.trim();
+      if (trimmedEffect.length > 0) {
+        parts.push(/[.!?]$/.test(trimmedEffect) ? trimmedEffect : `${trimmedEffect}.`);
+      }
+    }
   } else if (extra?.conditionApplied) {
     let conditionText = `Applies ${extra.conditionApplied}`;
     if (extra.conditionDuration) {
@@ -152,6 +187,74 @@ const formatAttackDisplay = (attack, extras = {}) => ({
   details: createAttackDescription(attack, extras),
   originalFeatureId: attack.originalFeatureId || null,
 });
+
+const ensureSentence = (value) => {
+  const trimmed = (value || '').trim();
+  if (!trimmed) return '';
+  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+};
+
+const normalizeFailureClause = (value = '') => {
+  if (!value) return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  return trimmed.replace(/\bOn\s+(?:an?\s+)?failure\b/i, (match) =>
+    match.charAt(0) === 'O' ? 'On failure' : 'on failure',
+  );
+};
+
+const createEnhancementDescription = (enh = {}) => {
+  if (!enh) return '';
+
+  const parts = [];
+  const summaryText = typeof enh.summary === 'string' ? enh.summary.trim() : '';
+  if (summaryText) {
+    parts.push(ensureSentence(summaryText));
+  }
+
+  const descriptionText =
+    typeof enh.description === 'string' ? enh.description.trim() : '';
+  if (descriptionText && descriptionText !== summaryText) {
+    parts.push(ensureSentence(descriptionText));
+  }
+
+  const saveInfo = extractSaveInfo(enh);
+  if (saveInfo && (saveInfo.text || saveInfo.attribute || saveInfo.effect || typeof saveInfo.dc === 'number')) {
+    const structuredPieces = [];
+    if (typeof saveInfo.dc === 'number') {
+      structuredPieces.push(`DC ${saveInfo.dc}`);
+    }
+    if (saveInfo.attribute) {
+      structuredPieces.push(saveInfo.attribute);
+    }
+
+    let saveClause = structuredPieces.length > 0 ? `${structuredPieces.join(' ')} save` : '';
+    const rawSaveText = (saveInfo.text || '').trim();
+    if (!saveClause && rawSaveText) {
+      saveClause = rawSaveText.replace(/\.$/, '');
+    }
+
+    if (saveClause) {
+      const normalizedClause = saveClause.startsWith('The target')
+        ? saveClause
+        : `The target makes a ${saveClause}`;
+      parts.push(ensureSentence(normalizedClause));
+    }
+
+    if (saveInfo.effect) {
+      const normalizedEffect = normalizeFailureClause(saveInfo.effect);
+      if (normalizedEffect) {
+        parts.push(ensureSentence(normalizedEffect));
+      }
+    }
+  }
+
+  return parts
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
 
 export const formatForPresentation = (raw, derived) => {
   const display = {
@@ -214,17 +317,27 @@ export const formatForPresentation = (raw, derived) => {
     }
   });
 
-  display.Combat.AttackEnhancements = (derived.attackEnhancements || []).map((enh) => ({
-    name: `${enh.name} (${enh.displayCost || 'Special'})`,
-    details: createAttackDescription({
-      damage: enh.damage,
-      defense: enh.defense,
-      target: enh.target,
-      range: enh.range,
-      summary: enh.summary,
-    }, enh),
-    originalFeatureId: enh.originalFeatureId,
-  }));
+  display.Combat.AttackEnhancements = (derived.attackEnhancements || []).map((enh) => {
+    const saveInfo = extractSaveInfo(enh) || {};
+    const normalizedSaveEffect = normalizeFailureClause(
+      saveInfo.effect || enh.save?.effect || enh.saveEffect,
+    );
+
+    return {
+      name: `${enh.name} (${enh.displayCost || 'Special'})`,
+      details: createEnhancementDescription(enh),
+      originalFeatureId: enh.originalFeatureId,
+      summary: enh.summary || '',
+      saveAttribute: saveInfo.attribute || enh.saveAttribute || enh.save?.attribute || '',
+      saveDC:
+        typeof saveInfo.dc === 'number'
+          ? saveInfo.dc
+          : typeof enh.calculatedSaveDC === 'number'
+          ? enh.calculatedSaveDC
+          : enh.save?.dc || '',
+      saveEffect: normalizedSaveEffect || '',
+    };
+  });
 
   display.Reactions = (derived.reactions || []).map((reaction) => ({
     name: `${reaction.name} (${reaction.displayCost || 'Reaction'})`,
