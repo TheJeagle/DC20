@@ -345,8 +345,8 @@ const creatureFeatures = [
     kind: 'attack_enhancement',
     summary: 'Frost clings to the target, slowing them if they fail an Agility save.',
     cost: { mp: 1 },
-    save: { attribute: 'Agility', effect: 'On failure, the target is Slowed until end of its next turn' },
-    tags: ['cold', 'control'],
+    save: { attribute: 'Agi', effect: 'On failure, the target is Slowed until end of its next turn' },
+    tags: ['cold', 'control', 'enhancement'],
   },
   {
     id: 'enhance_domineering_taunt',
@@ -354,8 +354,8 @@ const creatureFeatures = [
     kind: 'attack_enhancement',
     summary: 'You draw your foe’s focus with brutal bravado, forcing them to target you on a failed Charisma save.',
     cost: { ap: 1 },
-    save: { attribute: 'Charisma', effect: 'On failure, the target is Taunted until start of your next turn' },
-    tags: ['defender', 'taunt'],
+    save: { attribute: 'Cha', effect: 'On failure, the target is Taunted until start of your next turn' },
+    tags: ['defender', 'taunt', 'enhancement'],
   },
 
   // --- APEX ACTIONS ---
