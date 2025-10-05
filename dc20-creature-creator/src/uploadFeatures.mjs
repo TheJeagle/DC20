@@ -191,7 +191,7 @@ const creatureFeatures = [
     defense: 'AD',
     range: 'self',
     target: 'creatures in a 3-space cone',
-    save: { attribute: 'Agi', effect: 'On failure, target is Slowed 1 until end of its next turn' },
+    save: { attribute: 'Agility', effect: 'On failure, target is Slowed 1 until end of its next turn' },
     tags: ['spell', 'cold', 'aoe', 'control'],
   },
   {
@@ -229,7 +229,7 @@ const creatureFeatures = [
     cost: { ap: 1, mp: 1 },
     range: "10 Spaces",
     target: '1 creature you can see',
-    save: { attribute: 'Cha', effect: 'On failure, the creature drops a held weapon' },
+    save: { attribute: 'Charisma', effect: 'On failure, the creature drops a held weapon' },
     tags: ['spell', 'control', 'mental'],
   },
   {
@@ -319,7 +319,7 @@ const creatureFeatures = [
     kind: 'attack_enhancement',
     summary: 'You channel necrotic energy that may stun the target.',
     cost: { ap: 1 },
-    save: { attribute: 'Cha', effect: 'On failure, target is Stunned(1) until end of its next turn' },
+    save: { attribute: 'Charisma', effect: 'On failure, target is Stunned(1) until end of its next turn' },
     tags: ['undead', 'control', "enhancement"],
   },
   {
@@ -377,11 +377,11 @@ const creatureFeatures = [
     name: 'Mythic Roar',
     kind: 'apex_action',
     method: 'Spell',
-    summary: 'Each enemy within 3 spaces must succeed on a Cha save or become frightened for 1 round.',
+    summary: 'Each enemy within 3 spaces must succeed on a Charisma save or become frightened for 1 round.',
     cost: { ap: 2 },
     range: "3 Spaces",
     target: 'all enemies within range',
-    save: { attribute: 'Cha', effect: 'On failure, the enemy is Frightened for 1 round' },
+    save: { attribute: 'Charisma', effect: 'On failure, the enemy is Frightened for 1 round' },
     tags: ['apex'],
   },
 ];
