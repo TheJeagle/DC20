@@ -35,9 +35,6 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
     const numericDamageModifier = Number(damageModifierRaw);
     const modifierIsNumeric = !Number.isNaN(numericDamageModifier);
     const baseDamageAmount = (() => {
-        if (typeof calculatedDamage === 'number' && Number.isFinite(calculatedDamage)) {
-            return calculatedDamage;
-        }
         if (typeof damage?.base === 'number' && Number.isFinite(damage.base)) {
             return damage.base;
         }
@@ -48,9 +45,15 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
         ) {
             return damage.total - numericDamageModifier;
         }
+        if (typeof damage?.total === 'number' && Number.isFinite(damage.total)) {
+            return damage.total;
+        }
         return null;
     })();
     const resolvedDamageAmount = (() => {
+        if (typeof calculatedDamage === 'number' && Number.isFinite(calculatedDamage)) {
+            return Math.ceil(calculatedDamage);
+        }
         if (typeof baseDamageAmount === 'number' && modifierIsNumeric) {
             return Math.ceil(baseDamageAmount + numericDamageModifier);
         }
@@ -224,7 +227,7 @@ const ActionInlineDisplay = ({ action, onSaveField }) => {
                         />
                     ) : (
                         'damage '
-                    )}
+                    )}{' '}
                     <EditableField
                         value={resolvedDamageType}
                         onSave={(f, val) => handleSave('damageType', val)}
