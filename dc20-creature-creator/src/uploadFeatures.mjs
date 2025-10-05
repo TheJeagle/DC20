@@ -138,7 +138,7 @@ const creatureFeatures = [
     method: 'Melee Spell Attack',
     summary: 'You attempt to drain life force from a creature you touch.',
     cost: { ap: 1 },
-    damage: { bonus: 0, type: 'umbral' },
+    damage: { modifier: 0, type: 'umbral' },
     defense: 'PD',
     range: '1 Space',
     target: '1 creature',
@@ -161,7 +161,7 @@ const creatureFeatures = [
     method: 'Melee Martial Attack',
     summary: 'You make a powerful, focused melee attack.',
     cost: { ap: 2 },
-    damage: { bonus: 1, type: 'physical' },
+    damage: { modifier: 1, type: 'physical' },
     defense: 'PD',
     range: '1 Space',
     target: '1 creature',
@@ -174,7 +174,7 @@ const creatureFeatures = [
     method: 'Melee Martial Attack',
     summary: 'You swing your weapon in a wide arc, catching multiple foes.',
     cost: { ap: 2 },
-    damage: { bonus: -1, type: 'physical' },
+    damage: { modifier: -1, type: 'physical' },
     defense: 'AD',
     range: '1 Space',
     target: 'all creatures in a 3-space cone',
@@ -187,7 +187,7 @@ const creatureFeatures = [
     method: 'Ranged Spell Attack',
     summary: 'You unleash a freezing blast in a cone.',
     cost: { ap: 1, mp: 2 },
-    damage: { bonus: 0, type: 'cold' },
+    damage: { modifier: 0, type: 'cold' },
     defense: 'AD',
     range: 'self',
     target: 'creatures in a 3-space cone',
@@ -201,7 +201,7 @@ const creatureFeatures = [
     method: 'Ranged Martial Attack',
     summary: 'You fire a projectile or throw a weapon that explodes on impact.',
     cost: { ap: 2 },
-    damage: { bonus: -1, type: 'physical' },
+    damage: { modifier: -1, type: 'physical' },
     defense: 'AD',
     range: "10 Spaces",
     target: 'a 2-space cube',
@@ -214,7 +214,7 @@ const creatureFeatures = [
     method: 'Melee Martial Attack',
     summary: 'Charge up to 5 spaces in a line, striking each enemy you pass without provoking opportunity attacks.',
     cost: { ap: 2 },
-    damage: { bonus: -1, type: 'physical' },
+    damage: { modifier: -1, type: 'physical' },
     defense: 'PD',
     range: "5 Spaces",
     target: 'all creatures in a 5-space line',
@@ -239,7 +239,7 @@ const creatureFeatures = [
     method: 'Melee Martial Attack',
     summary: 'You slam into the foe, keeping step with them.',
     cost: { ap: 1 },
-    damage: { bonus: 0, type: 'physical' },
+    damage: { modifier: 0, type: 'physical' },
     defense: 'PD',
     range: '1 Space',
     target: '1 creature',
@@ -253,7 +253,7 @@ const creatureFeatures = [
     method: 'Zone Control Spell',
     summary: 'Conjure a jagged wall of ice that blocks movement and chills foes.',
     cost: { ap: 2, mp: 2 },
-    damage: { bonus: 0, type: 'cold' },
+    damage: { modifier: 0, type: 'cold' },
     defense: 'AD',
     range: "8 Spaces",
     target: 'a 5-space wall',
@@ -267,7 +267,7 @@ const creatureFeatures = [
     method: 'Ranged Spell Attack',
     summary: 'A crackling bolt leaps between targets.',
     cost: { ap: 1, mp: 1 },
-    damage: { bonus: 0, type: 'lightning' },
+    damage: { modifier: 0, type: 'lightning' },
     defense: 'PD',
     range: "10 Spaces",
     target: '1 creature; on hit, arcs to up to 2 creatures within 2 spaces (each suffers -1 damage)',
@@ -280,7 +280,7 @@ const creatureFeatures = [
     method: 'Melee Martial Attack',
     summary: 'You strike and slip away on the wind, disengaging after the attack.',
     cost: { ap: 1 },
-    damage: { bonus: 0, type: 'physical' },
+    damage: { modifier: 0, type: 'physical' },
     defense: 'PD',
     range: '1 Space',
     target: '1 creature',
@@ -293,7 +293,7 @@ const creatureFeatures = [
     method: 'Area Spell Attack',
     summary: 'A crushing pulse collapses inward, dragging creatures toward the center.',
     cost: { ap: 2, mp: 2 },
-    damage: { bonus: 0, type: 'force' },
+    damage: { modifier: 0, type: 'force' },
     defense: 'AD',
     range: "8 Space",
     target: 'creatures in a 3-space sphere',
@@ -366,7 +366,7 @@ const creatureFeatures = [
     method: 'Melee Martial Attack',
     summary: 'You unleash a crushing melee blow dealing +2 damage.',
     cost: { ap: 1 },
-    damage: { bonus: 2, type: 'physical' },
+    damage: { modifier: 2, type: 'physical' },
     defense: 'PD',
     range: '1 Space',
     target: '1 creature',
@@ -403,9 +403,11 @@ const normalizedCreatureFeatures = creatureFeatures.map((feature) => {
 
   const damage = feature.damage || {};
   const normalizedDamage = {
-    bonus:
+    modifier:
       typeof damage === 'number'
         ? damage
+        : typeof damage.modifier === 'number'
+        ? damage.modifier
         : typeof damage.bonus === 'number'
         ? damage.bonus
         : 0,
