@@ -295,7 +295,7 @@ const creatureFeatures = [
     cost: { ap: 2, mp: 2 },
     damage: { bonus: 0, type: 'force' },
     defense: 'AD',
-    range: "8 Space",
+    range: "8 Spaces",
     target: 'creatures in a 3-space sphere',
     save: { attribute: 'Physical', effect: 'On failure, pulled up to 2 spaces toward the center; heavy hits also knock prone' },
     tags: ['controller', 'zone', 'force'],
